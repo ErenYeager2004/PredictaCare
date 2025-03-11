@@ -9,10 +9,10 @@ const MyAppointments = () => {
 
   return (
     <div>
-        <p className='pb-3 mt-12 font-medium text-zinc-700 border-b'>My Appoinment</p>
+        <p className='pb-3 mt-12 font-medium text-zinc-700 border-b border-gray-200'>My Appoinment</p>
         <div>
           {doctors.slice(0,3).map((item,index)=>(
-            <div className='grid frid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b' key={index}>
+            <div className='grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b border-gray-200' key={index}>
                 <div>
                   <img className='w-32 bg-indigo-50' src={item.image} alt=""/>
                 </div>
@@ -27,7 +27,7 @@ const MyAppointments = () => {
                 <div></div>
                 <div className='flex flex-col gap-2 justify-end'>
                   <button className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-[#5f6FFF] hover:text-white transition-all duration-300'>Pay Online</button>
-                  <button className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300'>Cancel Appoinment</button>
+                  <button className='text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300'>Cancel appoinment</button>
                 </div>
             </div>
           ))}
