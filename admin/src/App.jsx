@@ -1,6 +1,5 @@
 import React, { useContext } from 'react'
 import Login from './pages/Login'
-
 import {ToastContainer,toast} from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css';
 import { AdminContext } from './context/AdminContext';
@@ -10,7 +9,8 @@ import { Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Admin/Dashboard';
 import AllAppoinments from './pages/Admin/AllAppointments';
 import AddDoctor from './pages/Admin/AddDoctor';
-import DoctorList from './pages/Admin/DoctorList'
+import DoctorList from './pages/Admin/DoctorList';
+
 
 const App = () => {
 
