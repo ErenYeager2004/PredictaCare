@@ -24,7 +24,7 @@ const AppContextProvider = (props) => {
         }
     }
 
-    const loadUserProfileData= async()=>{
+    const loadUserProfileData = async()=>{
         try {
             const {data}=await axios.get(backendUrl+'/api/user/get-profile',{headers:{token}})
             if (data.success) {
@@ -40,10 +40,13 @@ const AppContextProvider = (props) => {
 
     const value = {
         doctors,
-        currencySymbol,token,
-        setToken,backendUrl,
-        userData,setUserData,
-        loadUserProfileData,
+        currencySymbol,
+        token,
+        setToken,      
+        backendUrl,
+        userData,
+        setUserData,
+        loadUserProfileData
     }
 
 
