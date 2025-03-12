@@ -9,11 +9,8 @@ import { Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Admin/Dashboard';
 import AllAppoinments from './pages/Admin/AllAppointments';
 import AddDoctor from './pages/Admin/AddDoctor';
-<<<<<<< HEAD
 import DoctorList from './pages/Admin/DoctorList';
-=======
-import DoctorList from './pages/Admin/DoctorList'
->>>>>>> 308451b7bd7df52e0b09d611cfe37996ff7c7e33
+
 
 const App = () => {
 
