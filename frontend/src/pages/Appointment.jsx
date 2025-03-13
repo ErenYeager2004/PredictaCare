@@ -61,7 +61,7 @@ const Appointment = () => {
         }
     }
 
-    const bookAppointment = async()=>{
+    const bookAppointment = async () => {
 
         if (!token) {
            toast.warn("Login to book appointment")
@@ -75,13 +75,13 @@ const Appointment = () => {
             let month = date.getMonth()+1
             let year = date.getFullYear()
 
-            const slotDate = day+"-"+month+"-"+year
-            const {data} = await axios.post(backendUrl+'/api/user/book-appointment',{docId,slotDate,slotTime},{headers:{token}})
+            const slotDate = day+"_"+month+"_"+year
+            
+            const {data} = await axios.post(backendUrl + '/api/user/book-appointment',{docId,slotDate,slotTime},{headers:{token}})
+            
             if (data.success) {
                 toast.success(data.message)
-
                 getDoctorsData()
-
                 navigate('/my-appointments')
             }else{
                 toast.error(date.message)
@@ -91,6 +91,7 @@ const Appointment = () => {
             toast.error(error.message)
         }
     }
+    
 
     useEffect(() => {
         fetchDocInfo()

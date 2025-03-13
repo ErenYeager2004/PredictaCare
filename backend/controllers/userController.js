@@ -116,23 +116,23 @@ const updateProfile = async (req, res) => {
 
 const bookAppointment = async (req,res)=>{
     try {
-        const {userId,docId,slotdate,slotTime} = req.body
+        const {userId,docId,slotDate,slotTime} = req.body
         const docData = await doctorModel.findById(docId).select('-password')
         if (!docData.available) {
-            return res.json({succcess:false,message:"Doctor not Avialable"})
+            return res.json({success:false,message:"Doctor not Avialable"})
 
         }
         let slots_booked = docData.slots_booked
         // checking for availability
-        if (slots_booked[slotdate]) {
-            if (slots_booked[slotdate].includes(slotTime)) {
-                return res.json({succcess:false,message:"Slot not Avialable"})
+        if (slots_booked[slotDate]) {
+            if (slots_booked[slotDate].includes(slotTime)) {
+                return res.json({success:false,message:"Slot not Avialable"})
             }else{
-                slots_booked[slotdate].push(slotTime)
+                slots_booked[slotDate].push(slotTime)
             }
         }else{
-            slots_booked[slotdate]=[]
-            slots_booked[slotdate].push(slotTime)
+            slots_booked[slotDate]=[]
+            slots_booked[slotDate].push(slotTime)
         }
 
         const userData = await userModel.findById(userId).select('-password')
@@ -145,7 +145,7 @@ const bookAppointment = async (req,res)=>{
             docData,
             amount:docData.fees,
             slotTime,
-            slotdate,
+            slotDate,
             date:Date.now()
         }
 
