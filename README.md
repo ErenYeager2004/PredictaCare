@@ -24,7 +24,7 @@ Follow these steps to set up and run MediHub on your local machine:
 ```sh
 cd backend
 npm install
-npm start
+npm run server
 ```
 
 ### 2️⃣ Frontend Setup
@@ -34,6 +34,12 @@ npm install
 npm run dev
 ```
 
+### 3️⃣ Admin Setup
+```sh
+cd admin
+npm install
+npm run dev
+```
 ---
 
 ## 🤝 Contribution Guidelines
