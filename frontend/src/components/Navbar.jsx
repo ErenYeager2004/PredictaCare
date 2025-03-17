@@ -12,6 +12,7 @@ const Navbar = () => {
     const logout = () =>{
         setToken(false)
         localStorage.removeItem('token')
+        navigate('/')
     }
   return (
     <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400'>
@@ -44,6 +45,7 @@ const Navbar = () => {
                         <div className='min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4'>
                             <p onClick={()=>navigate('my-profile')} className='hover:text-black cursor-pointer'>My Profile</p>
                             <p onClick={()=>navigate('my-appointments')} className='hover:text-black cursor-pointer'>My Appointments</p>
+                            <p onClick={()=>navigate('my-profile')} className='hover:text-black cursor-pointer'>DiagnoAI</p>
                             <p onClick={logout} className='hover:text-black cursor-pointer'>Logout</p>
                         </div>
                     </div>
