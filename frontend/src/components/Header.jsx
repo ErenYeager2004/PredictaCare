@@ -1,17 +1,40 @@
-import React, { useState, useEffect } from 'react'
-import { assets } from '../assets/assets'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useContext } from 'react';
+import { assets } from '../assets/assets';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { AppContext } from '../context/AppContext';
 
 const Header = () => {
-  const [currentBanner, setCurrentBanner] = useState(0)
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const navigate = useNavigate();
+  const { token } = useContext(AppContext);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentBanner((prev) => (prev === 0 ? 1 : 0))
-    }, 5000)
+      setCurrentBanner((prev) => (prev === 0 ? 1 : 0));
+    }, 5000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleButtonClick = (link) => {
+    if (link === '#prediction') {
+      if (!token) {
+        navigate('/login');
+      } else {
+        navigate('/prediction');
+      }
+    } else if (link.startsWith('#')) {
+      // Scroll to section within the same page
+      const section = document.querySelector(link);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate(link);
+    }
+  };
+  
 
   const banners = [
     {
@@ -23,15 +46,15 @@ const Header = () => {
       showImage: true
     },
     {
-      title: 'Predict Diseases \n with AI Accuracy',
+      title: 'Predict Diseases \n with Prediction Model',
       description: 'Leverage our AI-driven predictive technology to assess health risks early and improve outcomes.',
       extraLine: 'Your health insights, one prediction away.',
       buttonText: 'Try Predictive AI',
-      buttonLink: '#predictive-ai',
+      buttonLink: '#prediction',
       image: null,
       showImage: false
     }
-  ]
+  ];
 
   return (
     <div className='relative w-full bg-[#5f6FFF] rounded-lg px-6 md:px-10 lg:px-20 overflow-hidden flex flex-col md:flex-row flex-wrap'>
@@ -59,21 +82,17 @@ const Header = () => {
 
               <div className='flex flex-col gap-2 text-center md:text-left'>
                 <p>{banners[currentBanner].description}</p>
-
-                {banners[currentBanner].extraLine && (
-                  <p className='text-xs opacity-90'>{banners[currentBanner].extraLine}</p>
-                )}
               </div>
             </div>
 
             {/* Button */}
-            <a
+            <button
               className='flex items-center justify-center gap-2 bg-white px-5 py-2 md:px-6 md:py-2.5 rounded-full text-gray-600 text-sm m-auto md:m-0 hover:scale-105 transition-all duration-300 w-fit'
-              href={banners[currentBanner].buttonLink}
+              onClick={() => handleButtonClick(banners[currentBanner].buttonLink)}
             >
               {banners[currentBanner].buttonText}
               <img className='w-3' src={assets.arrow_icon} alt="arrow" />
-            </a>
+            </button>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -87,7 +106,7 @@ const Header = () => {
         />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

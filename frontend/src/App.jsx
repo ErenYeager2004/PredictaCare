@@ -11,6 +11,7 @@ import Appointment from './pages/Appointment';
 import Navbar from './components/Navbar'
 import Footer from './components/Footer';
 import Bot from './components/Bot';
+import Prediction from './pages/Prediction'
 import {ToastContainer,toast} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -30,6 +31,7 @@ const App = () => {
         <Route path='/my-profile' element={<MyProfile />} />
         <Route path='/my-appointments' element={<MyAppointments />} />
         <Route path='/appointment/:docId' element={<Appointment />} />
+        <Route path='/prediction' element={<Prediction />} />
       </Routes>
       <Bot />
       <Footer />
