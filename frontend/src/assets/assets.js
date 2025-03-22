@@ -38,6 +38,7 @@ import Neurologist from './Neurologist.svg'
 import Pediatricians from './Pediatricians.svg'
 import chatbot from './chatbot.png'
 import bot_logo from './bot_logo.png'
+import bot from './bot.png'
 
 
 export const assets = {
@@ -59,7 +60,8 @@ export const assets = {
     stripe_logo,
     razorpay_logo,
     chatbot,
-    bot_logo
+    bot_logo,
+    bot
 }
 
 export const specialityData = [
