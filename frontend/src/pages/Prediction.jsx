@@ -303,7 +303,8 @@ const Prediction = () => {
       alert("Please select a disease");
       return;
     }
-
+  
+    // Ensure all required fields are filled
     const requiredFields = diseaseFields[disease].map((field) => field.name);
     for (let field of requiredFields) {
       if (!formData[field] && formData[field] !== 0) {
@@ -311,10 +312,11 @@ const Prediction = () => {
         return;
       }
     }
-
+  
     setLoading(true);
-
+  
     try {
+      // Step 1: Get the prediction from the backend
       const response = await fetch(`http://127.0.0.1:5000/predict/${disease}`, {
         method: "POST",
         headers: {
@@ -323,23 +325,47 @@ const Prediction = () => {
         },
         body: JSON.stringify(formData),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
       }
-
+  
       const result = await response.json();
+  
+      // Display prediction results to the user
+      const riskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
       setRiskPercentage(`${result.probability}%`);
-      setRiskLevel(result.risk === "YES" ? "High Risk" : "Low Risk");
+      setRiskLevel(riskLevel);
       setRiskMessage(
         result.risk === "YES"
           ? "Consult a doctor for further evaluation."
           : "Your health condition seems fine."
       );
       setPrediction(result.probability);
+  
+      // Step 2: Save the prediction and user data to MongoDB
+      const saveResponse = await fetch("http://127.0.0.1:4000/api/predictions/savePrediction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          disease,
+          userData: formData,
+          predictionResult: riskLevel,
+          probability: result.probability,
+        }),
+      });
+  
+      if (!saveResponse.ok) {
+        throw new Error("Failed to save prediction data");
+      }
+  
+      console.log("Prediction data saved successfully!");
     } catch (error) {
-      console.error("Error fetching prediction:", error);
-      setRiskMessage("Failed to get prediction. Please try again.");
+      console.error("Error:", error);
+      setRiskMessage("Failed to get prediction or save data. Please try again.");
     } finally {
       setLoading(false);
     }
