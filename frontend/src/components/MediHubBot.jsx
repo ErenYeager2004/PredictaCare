@@ -94,12 +94,14 @@ function MediHubBot() {
       const input_prompt = `
         User Query: "${userInput}"
         - If the message is an informal greeting like "hi" or "hello", greet back in a friendly way.
-        - If the user asks "who are you" or something similar, respond with "I am PredictaCare AI, your healthcare assistant." after that you can add more about yourself or "How can I help you today?"
+        - If the user asks "who are you" or something similar, respond strictly with: *"I am PredictaCare AI, your healthcare assistant."* You can follow up with "How can I assist you today?"
         - If symptoms are mentioned, identify possible diseases and suggest medications.
         - If it's a general medical question, answer concisely.
+        - If the question is not related to healthcare, respond strictly with: *"I am PredictaCare AI, your healthcare assistant. Please ask me questions only related to healthcare."*
+        - Do not answer questions unrelated to healthcare. Ignore anything else.
         - Avoid repeating instructions. Just respond to the user's input naturally.
-        - Format responses clearly with proper new lines & bold text to make focus on any text or give importance to any text.
-      `;
+        - Format responses clearly with proper new lines & *bold text* for important information.
+      `;
 
       const result = await chat.sendMessage(input_prompt);
       const botMessage = {

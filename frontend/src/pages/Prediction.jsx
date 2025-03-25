@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import jsPDF from "jspdf";
+import { AppContext } from "../context/AppContext";
+import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
 
 const diseaseFields = {
@@ -272,6 +274,8 @@ const Preloader = () => (
 );
 
 const Prediction = () => {
+  const { userData, backendUrl } = useContext(AppContext);
+
   const [pageLoading, setPageLoading] = useState(true);
   const [disease, setDisease] = useState("");
   const [formData, setFormData] = useState({});
@@ -300,7 +304,7 @@ const Prediction = () => {
 
   const handlePrediction = async () => {
     if (!disease) {
-      alert("Please select a disease");
+      toast.error("Please select a disease");
       return;
     }
   
@@ -344,6 +348,8 @@ const Prediction = () => {
       setPrediction(result.probability);
   
       // Step 2: Save the prediction and user data to MongoDB
+      const userId = userData?._id || "guest";
+  
       const saveResponse = await fetch("http://127.0.0.1:4000/api/predictions/savePrediction", {
         method: "POST",
         headers: {
@@ -352,14 +358,17 @@ const Prediction = () => {
         },
         body: JSON.stringify({
           disease,
-          userData: formData,
+          userId, // ✅ Corrected - ensure userId is passed
+          userInputs: formData, // ✅ Corrected from userData to userInputs
           predictionResult: riskLevel,
           probability: result.probability,
         }),
       });
   
       if (!saveResponse.ok) {
-        throw new Error("Failed to save prediction data");
+        const saveError = await saveResponse.json();
+        console.error("Failed to save prediction data:", saveError.message);
+        throw new Error(`Failed to save prediction data: ${saveError.message}`);
       }
   
       console.log("Prediction data saved successfully!");
@@ -370,6 +379,7 @@ const Prediction = () => {
       setLoading(false);
     }
   };
+  
 
   const handleDownloadCertificate = () => {
     if (!disease || prediction === null) {

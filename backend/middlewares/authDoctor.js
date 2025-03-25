@@ -1,21 +1,20 @@
-import jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken';
 
-const authDoctor = async (req,res,next) => {
-    try{
-        const {dtoken} = req.headers
+const authDoctor = async (req, res, next) => {
+    try {
+        const { dtoken } = req.headers;
         if (!dtoken) {
-            return res.json({success:false,message:'Not Authorized Login Again'})
+            return res.status(401).json({ success: false, message: 'Not Authorized. Login Again.' });
         }
 
-        const token_decode = jwt.verify(dtoken,process.env.JWT_SECRET)
+        const token_decode = jwt.verify(dtoken, process.env.JWT_SECRET);
+        req.body.docId = token_decode.id; // Keeping docId in req.body
 
-        req.body.docId = token_decode.id
-        next()
+        next();
+    } catch (error) {
+        console.error('Authentication Error:', error);
+        res.status(401).json({ success: false, message: 'Invalid or Expired Token. Login Again.' });
     }
-    catch (error) {
-        console.log(error)
-        res.json({success:false,message:error.message})
-    }
-}
+};
 
-export default authDoctor
+export default authDoctor;

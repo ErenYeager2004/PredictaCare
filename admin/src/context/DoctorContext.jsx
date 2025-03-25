@@ -12,6 +12,7 @@ const DoctorContextProvider = (props) => {
     const [appointments,setAppointments] = useState([])
     const [dashData,setDashData] = useState(false)
     const [profileData,setProfileData] = useState(false)
+    const [assignedPredictions, setAssignedPredictions] = useState([]);
     const getAppointments=async()=>{
         try {
             const {data} = await axios.get(backendUrl+'/api/doctor/appointments',{headers:{dToken}})
@@ -86,6 +87,38 @@ const DoctorContextProvider = (props) => {
             toast.error(error.message)
         }
     }
+    const getAssignedReviews = async () => {
+        try {
+            const { data } = await axios.get(backendUrl + '/api/doctor/predictions', { headers: { dToken } });
+            if (data.success) {
+                setAssignedPredictions(data.predictions);
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error(error.message);
+        }
+    };
+    const reviewPrediction = async (predictionId, status) => {
+        try {
+            const { data } = await axios.post(
+                backendUrl + `/api/doctor/review/${predictionId}`,
+                { status },
+                { headers: { dToken } }
+            );
+    
+            if (data.success) {
+                toast.success(data.message);
+                getAssignedReviews(); // Refresh after action
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error) {
+            console.log(error);
+            toast.error(error.message);
+        }
+    };        
     const value = {
         dToken,setDToken,
         backendUrl,
@@ -97,6 +130,7 @@ const DoctorContextProvider = (props) => {
         getDashData,
         profileData,setProfileData,
         getProfileData,
+        assignedPredictions, setAssignedPredictions, getAssignedReviews, reviewPrediction,
     }
 
     return (
