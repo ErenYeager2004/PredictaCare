@@ -3,6 +3,7 @@ import { DoctorContext } from "../../context/DoctorContext";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { assets } from '../../assets/assets'
 
 const DoctorReviewPage = () => {
   const { dToken, assignedPredictions, getAssignedReviews, reviewPrediction } =
@@ -151,115 +152,109 @@ const DoctorReviewPage = () => {
 
   return (
     <div className="w-full max-w-6xl m-5">
-      <p className="mb-3 text-lg font-medium">Doctor Review Panel</p>
+    <p className="mb-3 text-lg font-medium">Doctor Review Panel</p>
 
-      <div className="bg-white border border-gray-200 rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
+    <div className="bg-white border border-gray-200 rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
         {/* Table Header */}
-        <div className="hidden sm:grid grid-cols-[0.7fr_2fr_1.5fr_1.5fr_2fr_1fr_1fr] gap-3 py-3 px-6 border-b border-gray-200">
-          <p className="text-left">#</p>
-          <p className="text-left">Patient</p>
-          <p className="text-center">Disease</p>
-          <p className="text-center">Status</p>
-          <p className="text-center">Submitted On</p>
-          <p className="text-center">View Result</p>
-          <p className="text-center">Action</p>
+        <div className="hidden sm:grid grid-cols-[0.7fr_2fr_1.5fr_1.5fr_2fr_1fr_1.5fr] py-3 px-6 border-b border-gray-200">
+            <p className="text-center">#</p>
+            <p className="text-left">Patient</p>
+            <p className="text-center">Disease</p>
+            <p className="text-center">Status</p>
+            <p className="text-center">Submitted On</p>
+            <p className="text-center">View Result</p>
+            <p className="text-center">Action</p>
         </div>
 
         {/* Loading State */}
         {loadingReviews ? (
-          <p className="text-gray-400 text-center py-6">Loading reviews...</p>
+            <p className="text-gray-400 text-center py-6">Loading reviews...</p>
         ) : assignedPredictions.length === 0 ? (
-          <p className="text-gray-500 text-center py-6">No pending reviews.</p>
+            <p className="text-gray-500 text-center py-6">No pending reviews.</p>
         ) : (
-          // Render Assigned Reviews
-          assignedPredictions.map((item, index) => (
-            <div
-              className="flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_2fr_1.5fr_1.5fr_2fr_1fr_1fr] gap-3 items-center text-gray-500 py-3 px-6 border-b border-gray-200 hover:bg-gray-50"
-              key={item._id}
-            >
-              <p className="max-sm:hidden text-left">{index + 1}</p>
+            assignedPredictions.map((item, index) => (
+                <div
+                    className="flex flex-wrap justify-between sm:grid sm:grid-cols-[0.7fr_2fr_1.5fr_1.5fr_2fr_1fr_1.5fr] items-center text-gray-500 py-3 px-6 border-b border-gray-200 hover:bg-gray-50"
+                    key={item._id}
+                >
+                    {/* Serial Number */}
+                    <p className="text-center">{index + 1}</p>
 
-              {/* Patient Info */}
-              <div className="flex items-center gap-2 text-left">
-                <img
-                  className="w-8 h-8 rounded-full object-cover"
-                  src={item.userData?.image || "/placeholder.png"}
-                  alt="Patient"
-                />
-                <p className="whitespace-nowrap">
-                  {item.userData?.name || "Unknown"}
-                </p>
-              </div>
+                    {/* Patient Info */}
+                    <div className="flex items-center gap-2 text-left">
+                        <img
+                            className="w-8 h-8 rounded-full object-cover"
+                            src={item.userData?.image || "/placeholder.png"}
+                            alt="Patient"
+                        />
+                        <p className="whitespace-nowrap">{item.userData?.name || "Unknown"}</p>
+                    </div>
 
-              {/* Disease */}
-              <p className="text-center capitalize">{item.disease || "N/A"}</p>
+                    {/* Disease */}
+                    <p className="text-center capitalize">{item.disease || "N/A"}</p>
 
-              {/* Status */}
-              <p
-                className={`text-center font-medium ${
-                  item.status === "approved"
-                    ? "text-green-500"
-                    : item.status === "rejected"
-                    ? "text-red-500"
-                    : "text-yellow-500"
-                }`}
-              >
-                {item.status}
-              </p>
+                    {/* Status */}
+                    <p
+                        className={`text-center font-medium ${
+                            item.status === "approved"
+                                ? "text-green-500"
+                                : item.status === "rejected"
+                                ? "text-red-500"
+                                : "text-yellow-500"
+                        }`}
+                    >
+                        {item.status}
+                    </p>
 
-              {/* Date Submitted */}
-              <p className="text-center text-sm">
-                {item.date ? new Date(item.date).toLocaleString() : "No Date"}
-              </p>
+                    {/* Date Submitted */}
+                    <p className="text-center text-sm">
+                        {item.date ? new Date(item.date).toLocaleString() : "No Date"}
+                    </p>
 
-              {/* View Result Button */}
-              <button
-                onClick={() => handleViewResult(item)}
-                className="text-blue-500 text-sm font-medium hover:underline text-center"
-              >
-                View Result
-              </button>
+                    {/* View Result Button */}
+                    <div className="text-center">
+                        <button
+                            onClick={() => handleViewResult(item)}
+                            className="text-blue-500 text-sm font-medium hover:underline"
+                        >
+                            View Result
+                        </button>
+                    </div>
 
-              {/* Status & Actions */}
-              {item.status === "approved" ? (
-                <p className="text-green-500 text-sm font-medium text-center">
-                  Approved
-                </p>
-              ) : item.status === "rejected" ? (
-                <p className="text-red-500 text-sm font-medium text-center">
-                  Rejected
-                </p>
-              ) : (
-                <div className="flex gap-2 justify-center">
-                  <button
-                    onClick={() => handleReview(item._id, "approved")}
-                    className={`text-green-500 text-sm font-medium hover:underline ${
-                      loadingStates[item._id]
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    disabled={loadingStates[item._id]}
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleReview(item._id, "rejected")}
-                    className={`text-red-500 text-sm font-medium hover:underline ${
-                      loadingStates[item._id]
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                    disabled={loadingStates[item._id]}
-                  >
-                    Reject
-                  </button>
+                    {/* Actions with Icons */}
+                    <div className="text-center">
+                        {item.status === "approved" ? (
+                            <p className="text-green-500 text-sm font-medium">Approved</p>
+                        ) : item.status === "rejected" ? (
+                            <p className="text-red-500 text-sm font-medium">Rejected</p>
+                        ) : (
+                            <div className="flex justify-center gap-3">
+                                <img
+                                    onClick={() => handleReview(item._id, "approved")}
+                                    className={`w-10 cursor-pointer ${
+                                        loadingStates[item._id] ? "opacity-50 cursor-not-allowed" : ""
+                                    }`}
+                                    src={assets.tick_icon} // ✅ Approve Icon
+                                    alt="Approve"
+                                />
+                                <img
+                                    onClick={() => handleReview(item._id, "rejected")}
+                                    className={`w-10 cursor-pointer ${
+                                        loadingStates[item._id] ? "opacity-50 cursor-not-allowed" : ""
+                                    }`}
+                                    src={assets.cancel_icon} // ❌ Reject Icon
+                                    alt="Reject"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
-              )}
-            </div>
-          ))
+            ))
         )}
-      </div>
     </div>
+</div>
+
+  
   );
 };
 

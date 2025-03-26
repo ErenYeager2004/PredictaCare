@@ -25,14 +25,14 @@ export const savePrediction = async (req, res) => {
     };
 
     // Optional: Prevent duplicate predictions for the same disease/user
-    const existingPrediction = await Prediction.findOne({
-      "userData.email": userData.email,
-      disease,
-    });
+    // const existingPrediction = await Prediction.findOne({
+    //   "userData.email": userData.email,
+    //   disease,
+    // });
 
-    if (existingPrediction) {
-      return res.status(409).json({ message: "Prediction for this disease already exists" });
-    }
+    // if (existingPrediction) {
+    //   return res.status(409).json({ message: "Prediction for this disease already exists" });
+    // }
 
     // Create a new prediction entry with enhanced user data
     const newPrediction = new Prediction({
