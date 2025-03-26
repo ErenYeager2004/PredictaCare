@@ -156,6 +156,23 @@ const AdminContextProvider = (props) => {
     }
   };
 
+  const deletePrediction = async (predictionId) => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/admin/delete/${predictionId}`,
+        { headers: { aToken } }
+      );
+      if (data.success) {
+        toast.success("Prediction deleted successfully");
+        getAllPredictions(); // Refresh predictions list
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete prediction");
+    }
+  };  
+
   const value = {
     aToken,
     setAToken,
@@ -173,6 +190,7 @@ const AdminContextProvider = (props) => {
     getAllPredictions,
     assignDoctorToReview,
     sendForReview,
+    deletePrediction,
   };
 
   return (

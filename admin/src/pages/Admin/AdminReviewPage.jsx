@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useState } from "react";
+import axios from "axios";
 import { AdminContext } from "../../context/AdminContext";
 import { AppContext } from "../../context/AppContext";
 import { toast } from "react-toastify";
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL; 
 const AdminReviewPage = () => {
   const {
     aToken,
@@ -11,6 +13,7 @@ const AdminReviewPage = () => {
     sendForReview,
     doctors,
     getAllDoctors,
+    deletePrediction
   } = useContext(AdminContext);
   const { calculateAge } = useContext(AppContext);
   const [selectedDoctors, setSelectedDoctors] = useState({});
@@ -56,29 +59,55 @@ const AdminReviewPage = () => {
     sendForReview(id, selectedDoctors[id]);
   };
 
-  const handleStatusAction = (id, newStatus) => {
-    console.log(`${newStatus} prediction ${id}`);
-    getAllPredictions(); // Refresh predictions instead of modifying directly
-  };
+  const handleUpload = async (predictionId) => {
+    if (!window.ethereum) {
+        toast.error("MetaMask is not installed");
+        return;
+    }
 
-  const StatusButton = ({ status, id }) => {
-    const statusMap = {
-      pending: { text: "Review", color: "text-blue-500", action: () => handleReview(id) },
-      approved: { text: "Upload", color: "text-green-500", action: () => handleStatusAction(id, "uploaded") },
-      rejected: { text: "Delete", color: "text-red-500", action: () => handleStatusAction(id, "deleted") },
-      reviewing: { text: "Reviewing", color: "text-gray-400" },
-      deleted: { text: "Deleted", color: "text-red-500" },
-      uploaded: { text: "Uploaded", color: "text-green-500" },
-    };
-    const { text, color, action } = statusMap[status] || { text: "Assigned", color: "text-gray-400" };
-    return action ? (
-      <button onClick={action} className={`${color} text-sm font-medium hover:underline`}>
-        {text}
-      </button>
-    ) : (
-      <p className={`${color} text-xs`}>{text}</p>
-    );
-  };
+    try {
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        if (!accounts.length) {
+            toast.error("Please connect your MetaMask wallet.");
+            return;
+        }
+
+        const adminWallet = accounts[0]; // Get admin's MetaMask wallet
+        const aToken = localStorage.getItem("aToken"); // Get auth token
+
+        if (!aToken) {
+            toast.error("Authentication token missing. Please log in again.");
+            return;
+        }
+
+        console.log("Sending Token:", aToken); // Debugging
+
+        const { data } = await axios.post(
+            `${backendUrl}/api/admin/upload-to-blockchain`,
+            { predictionId, adminWallet },  // Send wallet address
+            { headers: { atoken: aToken } }  // ✅ FIX: Use 'atoken' in headers
+        );
+
+        if (data.success) {
+            toast.success(`Uploaded to blockchain`);
+            console.log(`Uploaded to blockchain! Tx: ${data.txHash}`);
+            
+            getAllPredictions(); // Refresh list
+        } else {
+            toast.error(data.message);
+        }
+    } catch (error) {
+        console.error("Upload Error:", error.response ? error.response.data : error.message);
+        toast.error(error.response?.data?.message || "Failed to upload prediction");
+    }
+};
+    
+
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this prediction?")) {
+      deletePrediction(id);
+    }
+  };  
 
   return (
     <div className="w-full max-w-6xl m-5">

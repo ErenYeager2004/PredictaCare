@@ -6,6 +6,79 @@ import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
 import Prediction from "../models/predictionModel.js";
+import { ethers } from "ethers";
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const contractABI = require("../blockchain/contractABI.json");
+
+// Load environment variables
+const contractAddress = process.env.CONTRACT_ADDRESS;
+const provider = new ethers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL);
+const adminWallet = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
+const contract = new ethers.Contract(contractAddress, contractABI, adminWallet);
+
+const uploadToBlockchain = async (req, res) => {
+  try {
+      const { predictionId } = req.body;
+      console.log("Fetching Prediction Data for ID:", predictionId);
+
+      // Fetch Prediction from MongoDB
+      const prediction = await Prediction.findById(predictionId).lean();
+      if (!prediction) {
+          console.error("Prediction not found for ID:", predictionId);
+          return res.status(404).json({ success: false, message: "Prediction not found" });
+      }
+
+      // Check if already uploaded
+      if (prediction.status === "uploaded") {
+          console.warn("Prediction already uploaded:", predictionId);
+          return res.status(400).json({ success: false, message: "Already uploaded to blockchain" });
+      }
+
+      const userId = prediction?.userData?.id ? prediction.userData.id.toString() : "0";
+      console.log("User ID for blockchain:", userId);
+
+      const probabilityInt = Math.round(prediction.probability * 10000);
+
+      // Ensure contract is initialized
+      if (!contract) {
+          console.error("Smart contract not initialized");
+          return res.status(500).json({ success: false, message: "Smart contract not initialized" });
+      }
+
+      let tx;
+      try {
+          console.log("Sending transaction to storePrediction...");
+          tx = await contract.storePrediction(
+              userId,
+              prediction.disease,
+              JSON.stringify(prediction.userData.inputs),
+              prediction.predictionResult,
+              probabilityInt
+          );
+          await tx.wait();
+          console.log("Transaction successful! Hash:", tx.hash);
+      } catch (error) {
+          console.error("Transaction Failed:", error);
+          return res.status(500).json({ success: false, message: `Blockchain transaction failed: ${error.message}` });
+      }
+
+      // Update MongoDB Status
+      const updateResult = await Prediction.findByIdAndUpdate(predictionId, { status: "uploaded" });
+      if (!updateResult) {
+          console.error("Failed to update MongoDB for prediction:", predictionId);
+          return res.status(500).json({ success: false, message: "Failed to update prediction status" });
+      }
+      console.log("MongoDB updated successfully for:", predictionId);
+
+      res.json({ success: true, message: "Uploaded to blockchain", txHash: tx.hash });
+  } catch (error) {
+      console.error("Blockchain Upload Error:", error);
+      res.status(500).json({ success: false, message: `Failed to upload to blockchain: ${error.message}` });
+  }
+};
+
 const addDoctor = async (req, res) => {
   try {
     const {
@@ -259,6 +332,30 @@ const assignDoctorAndReview = async (req, res) => {
   }
 };
 
+const deletePrediction = async (req, res) => {
+  try {
+    const { predictionId } = req.params;
+
+    // Find the prediction
+    const prediction = await Prediction.findById(predictionId);
+    if (!prediction) {
+      return res.status(404).json({ success: false, message: "Prediction not found." });
+    }
+
+    // Ensure it's rejected before deletion
+    if (prediction.status !== "rejected") {
+      return res.status(400).json({ success: false, message: "Only rejected predictions can be deleted." });
+    }
+
+    // Delete the prediction
+    await Prediction.findByIdAndDelete(predictionId);
+    res.json({ success: true, message: "Prediction deleted successfully." });
+  } catch (error) {
+    console.error("🚨 Error deleting prediction:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
+
 export {
   addDoctor,
   loginAdmin,
@@ -269,4 +366,6 @@ export {
   getPredictions,
   sendForReview,
   assignDoctorAndReview,
+  deletePrediction,
+  uploadToBlockchain,
 };
