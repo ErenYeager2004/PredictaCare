@@ -27,7 +27,7 @@ const AllAppoinments = () => {
           <p>Fees</p>
           <p>Actions</p>
         </div>
-        {appointments.map((item,index)=>(
+        {appointments.reverse().map((item,index)=>(
           <div className='flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] items-center text-gray-500 py-3 px-6 border-b border-gray-200 hover:bg-gray-50' key={index}>
             <p className='max-sm:hidden'>{index+1}</p>
             <div className='flex items-center gap-2'>

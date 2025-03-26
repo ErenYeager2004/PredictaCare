@@ -15,24 +15,22 @@ const AdminReviewPage = () => {
   const { calculateAge } = useContext(AppContext);
   const [selectedDoctors, setSelectedDoctors] = useState({});
   const [loadingDoctors, setLoadingDoctors] = useState(true);
-
   useEffect(() => {
     if (aToken) {
       getAllPredictions();
-
-      const fetchDoctors = async () => {
-        try {
-          await getAllDoctors();
-        } catch (error) {
-          console.error("Failed to fetch doctors:", error);
-        } finally {
-          setLoadingDoctors(false);
-        }
-      };
-
       fetchDoctors();
     }
   }, [aToken]);
+
+  const fetchDoctors = async () => {
+    try {
+      await getAllDoctors();
+    } catch (error) {
+      console.error("Failed to fetch doctors:", error);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
 
   const getFilteredDoctors = (disease) => {
     const specializations = {
@@ -41,12 +39,8 @@ const AdminReviewPage = () => {
       heart: ["cardiologist"],
       diabetes: ["endocrinologist", "general physician"],
     };
-
-    const normalizedDisease = disease.trim().toLowerCase();
     return doctors.filter((doc) =>
-      specializations[normalizedDisease]?.includes(
-        doc.speciality.toLowerCase().trim()
-      )
+      specializations[disease.toLowerCase()?.trim()]?.includes(doc.speciality.toLowerCase().trim())
     );
   };
 
@@ -59,119 +53,135 @@ const AdminReviewPage = () => {
       toast.error("Please select a doctor before reviewing.");
       return;
     }
-
     sendForReview(id, selectedDoctors[id]);
   };
 
-  const handleUpload = (id) => {
-    console.log(`Uploading prediction ${id}`);
-    const updatedPredictions = predictions.map((pred) =>
-      pred._id === id ? { ...pred, status: "uploaded" } : pred
-    );
-    getAllPredictions(updatedPredictions);
+  const handleStatusAction = (id, newStatus) => {
+    console.log(`${newStatus} prediction ${id}`);
+    getAllPredictions(); // Refresh predictions instead of modifying directly
   };
 
-  const handleDelete = (id) => {
-    console.log(`Deleting prediction ${id}`);
-    const updatedPredictions = predictions.map((pred) =>
-      pred._id === id ? { ...pred, status: "deleted" } : pred
+  const StatusButton = ({ status, id }) => {
+    const statusMap = {
+      pending: { text: "Review", color: "text-blue-500", action: () => handleReview(id) },
+      approved: { text: "Upload", color: "text-green-500", action: () => handleStatusAction(id, "uploaded") },
+      rejected: { text: "Delete", color: "text-red-500", action: () => handleStatusAction(id, "deleted") },
+      reviewing: { text: "Reviewing", color: "text-gray-400" },
+      deleted: { text: "Deleted", color: "text-red-500" },
+      uploaded: { text: "Uploaded", color: "text-green-500" },
+    };
+    const { text, color, action } = statusMap[status] || { text: "Assigned", color: "text-gray-400" };
+    return action ? (
+      <button onClick={action} className={`${color} text-sm font-medium hover:underline`}>
+        {text}
+      </button>
+    ) : (
+      <p className={`${color} text-xs`}>{text}</p>
     );
-    getAllPredictions(updatedPredictions);
   };
 
   return (
     <div className="w-full max-w-6xl m-5">
-      <p className="md-3 text-lg font-medium">Prediction Review Management</p>
-      <div className="bg-white border border-gray-200 rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
-        <div className="hidden sm:grid grid-cols-[0.7fr_2.3fr_1.4fr_1.2fr_1.5fr_3.14fr_1.3fr] gap-3 py-3 px-6 border-b border-gray-200">
-          <p className="text-left">#</p>
-          <p className="text-left">Patient</p>
-          <p className="text-center">Age</p>
-          <p className="text-center">Disease</p>
-          <p className="text-center">Status</p>
-          <p className="text-center">Select Doctor</p>
-          <p className="text-center">Action</p>
-        </div>
-        {predictions.map((item, index) => (
+    <p className="md-3 text-lg font-medium">Prediction Review Management</p>
+    <div className="bg-white border border-gray-200 rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
+      <div className="max-sm:hidden grid grid-cols-[0.5fr_1.5fr_0.9fr_1.2fr_1fr_2fr_1.2fr] gap-1 py-3 px-6 border-b text-center">
+        <p>#</p>
+        <p className="text-left">Patient</p>
+        <p>Age</p>
+        <p>Disease</p>
+        <p>Status</p>
+        <p>Select Doctor</p>
+        <p>Action</p>
+      </div>
+      {predictions
+        .slice()
+        .reverse()
+        .map((item, index) => (
           <div
-            className="flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_2fr_1fr_1.2fr_1fr_2fr_1fr] gap-3 items-center text-gray-500 py-3 px-6 border-b border-gray-200 hover:bg-gray-50"
+            className="flex flex-wrap justify-between max-sm:gap-5 max-sm:text-base sm:grid grid-cols-[0.5fr_1.5fr_0.9fr_1.2fr_1fr_2fr_1.2fr] gap-1 items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-100 text-center"
             key={index}
           >
-            <p className="max-sm:hidden text-left">{index + 1}</p>
-            <div className="flex items-center gap-2 text-left">
-              <img
-                className="w-8 h-8 rounded-full"
-                src={item.userData.image}
-                alt=""
-              />
+            <p className="max-sm:hidden">{index + 1}</p>
+  
+            {/* Fixed Name Alignment */}
+            <div className="flex items-center gap-2 text-left w-full">
+              <img className="w-8 h-8 rounded-full" src={item.userData.image} alt="" />
               <p className="whitespace-nowrap">{item.userData.name}</p>
             </div>
-            <p className="max-sm:hidden text-center">
-              {calculateAge(item.userData.dob)}
-            </p>
-            <p className="text-center">{item.disease}</p>
-            <p
-              className={`font-medium text-center ${
-                item.status === "Sent for Review"
-                  ? "text-blue-500"
-                  : "text-gray-400"
-              }`}
-            >
-              {item.status}
-            </p>
-            {loadingDoctors ? (
-              <p className="text-gray-400 text-sm text-center">
-                Loading doctors...
+  
+            <p className="max-sm:hidden">{calculateAge(item.userData.dob)}</p>
+            <p className="max-sm:hidden">{item.disease}</p>
+  
+            {/* Centered Status */}
+            <div className="flex justify-center">
+              <p
+                className={`text-xs inline border border-[#5F6FFF] px-2 py-1 rounded-xl ${
+                  item.status === "Sent for Review" ? "text-blue-500" : "text-gray-400"
+                }`}
+              >
+                {item.status}
               </p>
-            ) : (
-              <select
-                className="text-sm p-1 border rounded text-center"
-                value={selectedDoctors[item._id] || ""}
-                onChange={(e) => handleDoctorSelect(item._id, e.target.value)}
-                disabled={item.status !== "pending"}
-              >
-                <option value="">Select Doctor</option>
-                {getFilteredDoctors(item.disease).map((doc) => (
-                  <option key={doc._id} value={doc._id}>
-                    {doc.name} - {doc.speciality}
-                  </option>
-                ))}
-              </select>
-            )}
-            {item.status === "pending" ? (
-              <button
-                onClick={() => handleReview(item._id)}
-                className="text-blue-500 text-sm font-medium hover:underline text-center"
-              >
-                Review
-              </button>
-            ) : item.status === "approved" ? (
-              <button
-                onClick={() => handleUpload(item._id)}
-                className="text-green-500 text-sm font-medium hover:underline text-center"
-              >
-                Upload
-              </button>
-            ) : item.status === "rejected" ? (
-              <button
-                onClick={() => handleDelete(item._id)}
-                className="text-red-500 text-sm font-medium hover:underline text-center"
-              >
-                Delete
-              </button>
-            ) : item.status === "reviewing" ? (
-              <p className="text-gray-400 text-xs text-center">Reviewing</p>
-            ) : item.status === "deleted" ? (
-              <p className="text-red-500 text-xs text-center">Deleted</p>
-            ) : item.status === "uploaded" ? (
-              <p className="text-green-500 text-xs text-center">Uploaded</p>
-            ) : (
-              <p className="text-gray-400 text-xs text-center">Assigned</p>
-            )}
+            </div>
+  
+            {/* Centered Doctor Selection */}
+            <div className="w-full flex justify-center">
+              {loadingDoctors ? (
+                <p className="text-gray-400 text-sm">Loading doctors...</p>
+              ) : (
+                <select
+                  className="text-sm p-1 border rounded text-center w-40"
+                  value={selectedDoctors[item._id] || item.assignedDoctor || ""}
+                  onChange={(e) => handleDoctorSelect(item._id, e.target.value)}
+                  disabled={item.status !== "pending"}
+                >
+                  <option value="">Select Doctor</option>
+                  {getFilteredDoctors(item.disease).map((doc) => (
+                    <option key={doc._id} value={doc._id}>
+                      {doc.name} - {doc.speciality}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+  
+            {/* Centered Action Buttons */}
+            <div className="w-full flex justify-center">
+              {item.status === "pending" ? (
+                <button
+                  onClick={() => handleReview(item._id)}
+                  className="text-blue-500 text-sm font-medium hover:underline"
+                >
+                  Review
+                </button>
+              ) : item.status === "approved" ? (
+                <button
+                  onClick={() => handleUpload(item._id)}
+                  className="text-green-500 text-sm font-medium hover:underline"
+                >
+                  Upload
+                </button>
+              ) : item.status === "rejected" ? (
+                <button
+                  onClick={() => handleDelete(item._id)}
+                  className="text-red-500 text-sm font-medium hover:underline"
+                >
+                  Delete
+                </button>
+              ) : item.status === "reviewing" ? (
+                <p className="text-gray-400 text-xs">Reviewing</p>
+              ) : item.status === "deleted" ? (
+                <p className="text-red-500 text-xs">Deleted</p>
+              ) : item.status === "uploaded" ? (
+                <p className="text-green-500 text-xs">Uploaded</p>
+              ) : (
+                <p className="text-gray-400 text-xs">Assigned</p>
+              )}
+            </div>
           </div>
         ))}
-      </div>
     </div>
+  </div>
+  
   );
 };
 
