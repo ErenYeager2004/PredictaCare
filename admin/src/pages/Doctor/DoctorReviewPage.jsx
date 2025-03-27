@@ -30,7 +30,7 @@ const DoctorReviewPage = () => {
     setLoadingStates((prev) => ({ ...prev, [predictionId]: true }));
     try {
       await reviewPrediction(predictionId, status);
-      toast.success(`Prediction ${status}!`);
+      toast.success(`Prediction ${status}`);
       getAssignedReviews(); // Refresh from backend
     } catch (error) {
       toast.error(`Failed to ${status} prediction.`);

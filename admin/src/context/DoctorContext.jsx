@@ -109,7 +109,7 @@ const DoctorContextProvider = (props) => {
             );
     
             if (data.success) {
-                toast.success(data.message);
+                // toast.success(data.message);
                 getAssignedReviews(); // Refresh after action
             } else {
                 toast.error(data.message);
