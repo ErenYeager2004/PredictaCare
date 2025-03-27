@@ -113,7 +113,7 @@ const AdminReviewPage = () => {
     <div className="w-full max-w-6xl m-5">
     <p className="md-3 text-lg font-medium">Prediction Review Management</p>
     <div className="bg-white border border-gray-200 rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll">
-      <div className="max-sm:hidden grid grid-cols-[0.5fr_1.5fr_0.9fr_1.2fr_1fr_2fr_1.2fr] gap-1 py-3 px-6 border-b text-center">
+      <div className="max-sm:hidden grid grid-cols-[0.5fr_1.5fr_0.9fr_1.2fr_1fr_2fr_1.2fr] gap-1 py-3 px-6 border-b border-gray-200 text-center">
         <p>#</p>
         <p className="text-left">Patient</p>
         <p>Age</p>
@@ -127,7 +127,7 @@ const AdminReviewPage = () => {
         .reverse()
         .map((item, index) => (
           <div
-            className="flex flex-wrap justify-between max-sm:gap-5 max-sm:text-base sm:grid grid-cols-[0.5fr_1.5fr_0.9fr_1.2fr_1fr_2fr_1.2fr] gap-1 items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-100 text-center"
+            className="flex flex-wrap justify-between max-sm:gap-5 max-sm:text-base sm:grid grid-cols-[0.5fr_1.5fr_0.9fr_1.2fr_1fr_2fr_1.2fr] gap-1 items-center text-gray-500 py-3 px-6 border-b border-gray-200 hover:bg-gray-100 text-center"
             key={index}
           >
             <p className="max-sm:hidden">{index + 1}</p>

@@ -8,14 +8,16 @@ import { json } from "express";
 // ✅ Fetch only assigned cases for the doctor
 const getAssignedReviews = async (req, res) => {
   try {
-    const doctorId = req.body.docId; // Extract doctor ID from req.body
+    const doctorId = req.body.docId; 
     if (!doctorId) {
       return res
         .status(401)
         .json({ success: false, message: "Not Authorized. Login Again." });
     }
 
-    const predictions = await Prediction.find({ doctorId }).sort({ date: -1 });
+    // ✅ Fetch only "pending" predictions
+    const predictions = await Prediction.find({ doctorId, status: "reviewing" }).sort({ date: -1 });
+
     res.json({ success: true, predictions });
   } catch (error) {
     console.error("Error fetching assigned cases:", error);
