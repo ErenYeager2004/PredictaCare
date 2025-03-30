@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import jsPDF from "jspdf";
+import { motion } from "framer-motion";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import { assets } from "../assets/assets";
@@ -247,31 +248,55 @@ const diseaseFields = {
 };
 
 const getRiskColor = (percentage) => {
-  if (percentage <= 30) return "#10B981"; // Green (Low Risk)
-  if (percentage <= 70) return "#F59E0B"; // Orange (Moderate Risk)
+  if (percentage <= 50) return "#10B981"; // Green (Low Risk)
+  if (percentage <= 80) return "#F59E0B"; // Orange (Moderate Risk)
   return "#EF4444"; // Red (High Risk)
 };
 
-const Preloader = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-r from-blue-300 inset-ring-blue-200 to-blue-100 z-50">
-    {/* Subtle Animated Logo */}
-    <h1 className="text-5xl font-bold text-blue-600 tracking-wide mb-4 animate-[fadeIn_1.5s_ease-out]">
-      DIAGNO<span className="text-gray-800">AI</span>
-    </h1>
+const Preloader = () => {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-r from-blue-300 to-blue-100 z-50">
+      {/* Animated Logo */}
+      <motion.h1
+        className="text-5xl font-bold text-blue-600 tracking-wide mb-4"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.2, ease: "easeOut" }}
+      >
+        DIAGNO<span className="text-gray-800">AI</span>
+      </motion.h1>
 
-    {/* Elegant Subheading */}
-    <p className="text-xl text-gray-500 animate-[fadeIn_2s_ease-out]">
-      Your health insights, one prediction away...
-    </p>
+      {/* Animated Subheading */}
+      <motion.p
+        className="text-xl text-gray-500"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+      >
+        Your health insights, one prediction away...
+      </motion.p>
 
-    {/* Clean Pulse Dot Loader */}
-    <div className="flex gap-1 mt-4 animate-[fadeIn_2s_ease-out]">
-      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.2s]"></div>
-      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.1s]"></div>
-      <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+      {/* Pulse Loader with Custom Animation */}
+      <div className="flex gap-1 mt-4">
+        <motion.div
+          className="w-2 h-2 bg-blue-600 rounded-full"
+          animate={{ y: [-5, 5, -5] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="w-2 h-2 bg-blue-600 rounded-full"
+          animate={{ y: [-5, 5, -5] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+        />
+        <motion.div
+          className="w-2 h-2 bg-blue-600 rounded-full"
+          animate={{ y: [-5, 5, -5] }}
+          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const Prediction = () => {
   const { userData, backendUrl } = useContext(AppContext);
