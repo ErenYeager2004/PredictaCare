@@ -9,7 +9,8 @@ import {
     getPredictions, 
     sendForReview,
     deletePrediction,
-    uploadToBlockchain
+    uploadToBlockchain,
+    handleDelete,
 } from '../controllers/adminController.js';
 import upload from '../middlewares/multer.js';
 import authAdmin from '../middlewares/authAdmin.js';
@@ -30,5 +31,5 @@ adminRouter.get('/predictions', authAdmin, getPredictions);
 adminRouter.post('/send-review/:predictionId', authAdmin, sendForReview);
 adminRouter.post("/upload-to-blockchain", authAdmin, uploadToBlockchain);
 adminRouter.delete('/delete/:predictionId', authAdmin, deletePrediction);
-
+adminRouter.delete('/handle-delete/:predictionId', authAdmin, handleDelete);
 export default adminRouter;
