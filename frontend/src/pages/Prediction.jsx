@@ -4,6 +4,7 @@ import jsPDF from "jspdf";
 import { motion } from "framer-motion";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
+import logo from '../assets/logo.png';
 import { assets } from "../assets/assets";
 
 const diseaseFields = {
@@ -332,7 +333,7 @@ const Prediction = () => {
       toast.error("Please select a disease");
       return;
     }
-  
+
     // Ensure all required fields are filled
     const requiredFields = diseaseFields[disease].map((field) => field.name);
     for (let field of requiredFields) {
@@ -341,9 +342,9 @@ const Prediction = () => {
         return;
       }
     }
-  
+
     setLoading(true);
-  
+
     try {
       // Step 1: Get the prediction from the backend
       const response = await fetch(`http://127.0.0.1:5000/predict/${disease}`, {
@@ -354,13 +355,13 @@ const Prediction = () => {
         },
         body: JSON.stringify(formData),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
       }
-  
+
       const result = await response.json();
-  
+
       // Display prediction results to the user
       const riskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
       setRiskPercentage(`${result.probability}%`);
@@ -371,10 +372,10 @@ const Prediction = () => {
           : "Your health condition seems fine."
       );
       setPrediction(result.probability);
-  
+
       // Step 2: Save the prediction and user data to MongoDB
       const userId = userData?._id || "guest";
-  
+
       const saveResponse = await fetch("http://127.0.0.1:4000/api/predictions/savePrediction", {
         method: "POST",
         headers: {
@@ -389,13 +390,13 @@ const Prediction = () => {
           probability: result.probability,
         }),
       });
-  
+
       if (!saveResponse.ok) {
         const saveError = await saveResponse.json();
         console.error("Failed to save prediction data:", saveError.message);
         throw new Error(`Failed to save prediction data: ${saveError.message}`);
       }
-  
+
       console.log("Prediction data saved successfully!");
     } catch (error) {
       console.error("Error:", error);
@@ -404,7 +405,40 @@ const Prediction = () => {
       setLoading(false);
     }
   };
-  
+
+  const normalValues = {
+    heart: {
+      trestbps: { normal: "90-120", unit: "mm Hg" },
+      chol: { normal: "< 200", unit: "mg/dL" },
+      fbs: { normal: "< 100", unit: "mg/dL" },
+      thalach: { normal: "60-100", unit: "bpm" },
+      oldpeak: { normal: "0-2", unit: "mm" },
+    },
+    diabetes: {
+      pregnancies: { normal: "0-2", unit: "Count" },
+      glucose: { normal: "70-99", unit: "mg/dL" },
+      blood_pressure: { normal: "90-120", unit: "mm Hg" },
+      skin_thickness: { normal: "10-40", unit: "mm" },
+      insulin: { normal: "16-166", unit: "µU/mL" },
+      bmi: { normal: "18.5-24.9", unit: "kg/m²" },
+      dpf: { normal: "0.1-2.5", unit: "Index" },
+    },
+    pcos: {
+      bmi: { normal: "18.5-24.9", unit: "kg/m²" },
+      amh: { normal: "1.0-5.0", unit: "ng/mL" },
+      lh: { normal: "1.5-8.0", unit: "mIU/mL" },
+      fsh_lh: { normal: "1.0-2.0", unit: "Ratio" },
+      cycle_length: { normal: "21-35", unit: "Days" },
+      follicle_L: { normal: "5-10", unit: "Count" },
+      follicle_R: { normal: "5-10", unit: "Count" },
+      tsh: { normal: "0.5-4.5", unit: "mIU/L" },
+      endometrium: { normal: "7-14", unit: "mm" },
+    },
+    stroke: {
+      avg_glucose_level: { normal: "70-99", unit: "mg/dL" },
+      bmi: { normal: "18.5-24.9", unit: "kg/m²" },
+    },
+  };
 
   const handleDownloadCertificate = () => {
     if (!disease || prediction === null) {
@@ -414,87 +448,137 @@ const Prediction = () => {
 
     const doc = new jsPDF();
 
-    // Title
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.setTextColor(40, 40, 40);
-    doc.text(
-      "PredictaCare Prediction Certificate",
-      105,
-      30,
-      null,
-      null,
-      "center"
-    );
+    // Load Logo (Top Left, Resized to Maintain Aspect Ratio)
+    const img = new Image();
+    img.src = logo;
+    img.onload = () => {
+      doc.addImage(img, "PNG", 10, 7, 70, 20); // Adjust width and height to avoid squeezing
 
-    // Disease Name
-    doc.setFontSize(14);
-    doc.setTextColor(60, 60, 60);
-    doc.text(
-      `Disease: ${disease.toUpperCase()}`,
-      105,
-      45,
-      null,
-      null,
-      "center"
-    );
+      // Contact Information (Adjusted Positioning)
+      doc.setFontSize(10);
+      doc.setTextColor(60, 60, 60);
+      doc.text("Email: adminPredictaCare@gmail.com", 140, 15);
+      doc.text("Phone: +91 9903469038", 140, 20);
 
-    // Date
-    doc.setFontSize(12);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 15, 55);
+      // Title (Centered, Updated Text)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(40, 40, 40);
+      doc.text("Prediction Certificate", 105, 40, { align: "center" });
 
-    // Line Separator
-    doc.line(15, 60, 195, 60);
+      // Disease Name (Centered)
+      doc.setFontSize(12);
+      doc.setTextColor(60, 60, 60);
+      doc.text(`Disease: ${disease.toUpperCase()}`, 105, 48, { align: "center" });
 
-    // Patient Details Section
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Patient Details", 15, 70);
+      doc.line(15, 50, 195, 50);
 
-    let yPos = 80;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
+      // Date
+      doc.setFontSize(10);
+      const currentDate = new Date();
+      const dateString = currentDate.toLocaleDateString();
+      const timeString = currentDate.toLocaleTimeString();
+      doc.text(`Date: ${dateString}`, 160, 57);
+      doc.text(`Time: ${timeString}`, 160, 62);
 
-    diseaseFields[disease].forEach((field) => {
-      let value = formData[field.name];
+      doc.setFontSize(13);
+      doc.setFont("helvetica", "semi-bold");
+      doc.text("Patient Name: Debjit Saha", 15, 57);
+      const patientAge = formData["age"] || "N/A"; // Get age from formData
+      doc.text(`Age: ${patientAge}`, 15, 62);
+      doc.text("Sex: Male", 15, 67);
 
-      // Convert values to user-friendly labels
-      if (field.type === "select") {
-        const selectedOption = field.options.find((opt) => opt.value == value); // Loose equality to match number & string
-        value = selectedOption ? selectedOption.label : value;
-      }
+      doc.line(15, 70, 195, 70);
 
-      doc.text(`${field.label}: ${value}`, 20, yPos);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(40, 40, 40);
+      doc.text("Patient Report", 105, 85, { align: "center" });
+
+      // Patient Details Section
+      let yPos = 96;
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Parameter", 20, yPos);
+      doc.text("Normal Value", 78, yPos);
+      doc.text("Unit", 120, yPos);
+      doc.text("Patient Value", 148, yPos);
+      doc.text("Unit", 180, yPos);
+      doc.line(15, yPos + 5, 195, yPos + 5);
       yPos += 10;
-    });
 
-    // Prediction Result Section
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Prediction Result", 15, yPos + 10);
+      // Table Content
+      doc.setFont("helvetica", "normal");
+      diseaseFields[disease]
+        .filter(field => field.name !== "age" && field.name !== "gender" && field.name!=="sex") // Exclude age and gender
+        .forEach((field) => {
+          let value = formData[field.name] || "N/A";
+          let normalInfo = normalValues[disease][field.name] || { normal: "--", unit: "--" };
+          let normalValue = normalInfo.normal;
+          let unit = normalInfo.unit;
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
+          if (field.type === "select") {
+            const selectedOption = field.options.find((opt) => opt.value == value);
+            value = selectedOption ? selectedOption.label : value;
+          }
+          doc.text(field.label, 20, yPos);
+          doc.text(normalValue, 90, yPos, { align: "center" });
+          doc.text(unit, 125, yPos, { align: "center" });
+          doc.text(value, 160, yPos, { align: "center" });
+          doc.text(unit, 185, yPos, { align: "center" });
+          doc.line(15, yPos + 5, 195, yPos + 5);
+          yPos += 10;
+        });
 
-    // Risk Level with Color Coding
-    const riskColor = prediction >= 50 ? [200, 0, 0] : [0, 150, 0]; // Red for High Risk, Green for Low Risk
-    doc.setTextColor(...riskColor);
-    doc.text(`Risk Level: ${riskLevel}`, 20, yPos + 25);
-    doc.text(`Probability: ${riskPercentage}`, 20, yPos + 35);
+      // Set Table Position
+      const tableX = 30;
+      let tableY = yPos + 10;
+      const columnWidths = [80, 70]; // Column sizes for "Label" and "Value"
+      const rowHeight = 10;
+      const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
 
-    // Footer Disclaimer
-    doc.setTextColor(40, 40, 40);
-    doc.line(15, yPos + 40, 195, yPos + 40);
-    doc.setFontSize(10);
-    doc.text(
-      "This is a computer-generated report. Please consult a doctor for further evaluation.",
-      15,
-      yPos + 50
-    );
+      // Table Header
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setFillColor(230, 230, 230); // Light gray background for header
+      doc.rect(tableX, tableY, tableWidth, rowHeight, "F");
+      doc.setTextColor(0, 0, 0);
+      doc.text("Prediction Result", tableX + tableWidth / 2, tableY + 7, { align: "center" });
 
-    // Save PDF
-    doc.save(`Prediction_${disease}_certificate.pdf`);
+      // Table Border
+      doc.rect(tableX, tableY, tableWidth, rowHeight * 3);
+
+      // Risk Level Row
+      tableY += rowHeight;
+      doc.setFont("helvetica", "normal");
+      doc.text("Risk Level", tableX + 10, tableY + 7);
+      doc.setTextColor(...(prediction >= 50 ? [200, 0, 0] : [0, 150, 0])); // Red for high risk, Green for low
+      doc.text(riskLevel, tableX + columnWidths[0] + 10, tableY + 7);
+
+      // Probability Row
+      doc.setTextColor(0, 0, 0);
+      tableY += rowHeight;
+      doc.text("Probability", tableX + 10, tableY + 7);
+      doc.text(`${riskPercentage}`, tableX + columnWidths[0] + 15, tableY + 7);
+      // Footer Disclaimer
+      const pageWidth = doc.internal.pageSize.width; // Get page width
+      const pageHeight = doc.internal.pageSize.height; // Get page height
+
+      doc.setTextColor(40, 40, 40);
+      doc.line(15, pageHeight - 25, 195, pageHeight - 25); // Horizontal line above footer
+
+      doc.setFontSize(10);
+      doc.text(
+        "This is a computer-generated report. Please consult a doctor for further evaluation.",
+        pageWidth / 2, // Center horizontally
+        pageHeight - 15, // Position near bottom
+        { align: "center", maxWidth: 180 }
+      );
+      // Save PDF
+      doc.save(`Prediction_${disease}_certificate.pdf`);
+    };
   };
+
 
   return (
     <>
@@ -555,11 +639,10 @@ const Prediction = () => {
                   ))}
                   <button
                     type="button"
-                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${
-                      loading
+                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${loading
                         ? "bg-gray-500 cursor-not-allowed"
                         : "bg-blue-500 hover:bg-blue-600"
-                    }`}
+                      }`}
                     onClick={handlePrediction}
                     disabled={loading}
                   >
@@ -621,14 +704,12 @@ const Prediction = () => {
 
               <button
                 onClick={handleDownloadCertificate}
-                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${
-                  !prediction && "cursor-not-allowed opacity-50"
-                }`}
-                disabled={!prediction}
+                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${prediction == null ? "cursor-not-allowed opacity-50" : ""
+                  }`}
+                disabled={prediction == null} // Only disable when prediction is null or undefined
               >
                 Download Prediction Certificate
               </button>
-
               <p className="mt-6 text-gray-500 text-sm text-center">
                 {riskMessage}
               </p>
