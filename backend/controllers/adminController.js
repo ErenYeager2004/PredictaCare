@@ -356,6 +356,24 @@ const deletePrediction = async (req, res) => {
   }
 };
 
+const handleDelete = async (req, res) => {
+  try {
+    const { predictionId } = req.params;
+
+    // Find the prediction
+    const prediction = await Prediction.findById(predictionId);
+    if (!prediction) {
+      return res.status(404).json({ success: false, message: "Prediction not found." });
+    }
+
+    // Delete the prediction (without checking status)
+    await Prediction.findByIdAndDelete(predictionId);
+    res.json({ success: true, message: "Prediction deleted successfully." });
+  } catch (error) {
+    console.error("🚨 Error deleting prediction:", error);
+    res.status(500).json({ success: false, message: "Server error." });
+  }
+};
 export {
   addDoctor,
   loginAdmin,
@@ -368,4 +386,5 @@ export {
   assignDoctorAndReview,
   deletePrediction,
   uploadToBlockchain,
+  handleDelete,
 };

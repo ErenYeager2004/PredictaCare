@@ -56,7 +56,7 @@ app.use(
 // ✅ Rate Limiter to prevent abuse (100 requests per 15 minutes)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
-  max: 100, // Limit each IP to 100 requests
+  max: 500, // Limit each IP to 100 requests
   message: "❗Too many requests from this IP, please try again later.",
 });
 app.use(limiter);
