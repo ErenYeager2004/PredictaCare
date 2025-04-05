@@ -16,14 +16,14 @@ SCALER_DIR = "predictionModel/scalers/"
 
 # Model and Scaler file mapping
 MODEL_FILES = {
-    "heart": "heart_disease_model.h5",
+    "heart": "heart_disease_model_v2.h5",
     "diabetes": "diabetes_model.h5",
     "stroke": "stroke_model.h5",
     "pcos": "pcos_model.h5"
 }
 
 SCALER_FILES = {
-    "heart": "heart_scaler.pkl",
+    "heart": "scaler.pkl",
     "diabetes": "diabetes_scaler.pkl",
     "stroke": "stroke_scaler.pkl",
     "pcos": "pcos_scaler.pkl"

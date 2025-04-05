@@ -5,14 +5,21 @@ import axios from 'axios'
 import { toast } from 'react-toastify'
 import { DoctorContext } from '../context/DoctorContext'
 import {useNavigate} from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
+
 const Login = () => {
   const [state, setState] = useState('Admin')
   const [email,setEmail] = useState("")
   const [password,setPassword] = useState("")
   const {setAToken,backendUrl} = useContext(AdminContext)
   const {setDToken} = useContext(DoctorContext)
+  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate();
 
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev)
+  }
   const onSubmitHandler = async (event)=>{
       event.preventDefault()
 
@@ -61,10 +68,24 @@ const Login = () => {
           <input onChange={(e)=>setEmail(e.target.value)} value={email} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="email" required />
         </div>
 
-        <div className='w-full'>
-          <p>Password</p>
-          <input onChange={(e)=>setPassword(e.target.value)} value={password} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="password" required />
-        </div>
+         <div className='w-full relative'>
+                  <p>Password</p>
+                  <div className="relative w-full">
+                    <input
+                      className='border border-zinc-300 rounded w-full p-2 mt-1 pr-12' 
+                      type={showPassword ? "text" : "password"}
+                      onChange={(e) => setPassword(e.target.value)}
+                      value={password}
+                      required
+                    />
+                    <span
+                      className="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500 hover:text-gray-700"
+                      onClick={togglePasswordVisibility}
+                    >
+                      <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} size="lg" />
+                    </span>
+                  </div>
+                </div>
 
         <button className='bg-[#5F6FFF] text-white w-full py-2 rounded-md text-base'>Login</button>
         {
