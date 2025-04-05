@@ -9,6 +9,7 @@ import { assets } from "../assets/assets";
 
 const diseaseFields = {
   heart: [
+    { name: "user_name", label: "Full Name", type: "text" },
     { name: "age", label: "Age", type: "number" },
     {
       name: "sex",
@@ -99,6 +100,7 @@ const diseaseFields = {
     },
   ],
   diabetes: [
+    { name: "user_name", label: "Full Name", type: "text" },
     { name: "pregnancies", label: "Number of Pregnancies", type: "number" },
     { name: "glucose", label: "Glucose Level", type: "number" },
     { name: "blood_pressure", label: "Blood Pressure", type: "number" },
@@ -109,6 +111,7 @@ const diseaseFields = {
     { name: "age", label: "Age", type: "number" },
   ],
   pcos: [
+    { name: "user_name", label: "Full Name", type: "text" },
     { name: "age", label: "Age (in years)", type: "number" },
     { name: "bmi", label: "BMI", type: "number" },
     { name: "amh", label: "AMH (ng/mL)", type: "number" },
@@ -170,6 +173,7 @@ const diseaseFields = {
     },
   ],
   stroke: [
+    { name: "user_name", label: "Full Name", type: "text" },
     {
       name: "gender",
       label: "Gender",
@@ -333,19 +337,22 @@ const Prediction = () => {
       toast.error("Please select a disease");
       return;
     }
-
+  
     // Ensure all required fields are filled
     const requiredFields = diseaseFields[disease].map((field) => field.name);
     for (let field of requiredFields) {
-      if (!formData[field] && formData[field] !== 0) {
+      if (field !== "user_name" && (!formData[field] && formData[field] !== 0)) {
         alert(`Please fill the field: ${field}`);
         return;
       }
     }
-
+  
     setLoading(true);
-
+  
     try {
+      // Exclude "user_name" from the prediction request
+      const { user_name, ...predictionData } = formData;
+  
       // Step 1: Get the prediction from the backend
       const response = await fetch(`http://127.0.0.1:5000/predict/${disease}`, {
         method: "POST",
@@ -353,15 +360,15 @@ const Prediction = () => {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(predictionData), // Send data without "user_name"
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
       }
-
+  
       const result = await response.json();
-
+  
       // Display prediction results to the user
       const riskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
       setRiskPercentage(`${result.probability}%`);
@@ -372,10 +379,10 @@ const Prediction = () => {
           : "Your health condition seems fine."
       );
       setPrediction(result.probability);
-
+  
       // Step 2: Save the prediction and user data to MongoDB
       const userId = userData?._id || "guest";
-
+  
       const saveResponse = await fetch("http://127.0.0.1:4000/api/predictions/savePrediction", {
         method: "POST",
         headers: {
@@ -384,19 +391,19 @@ const Prediction = () => {
         },
         body: JSON.stringify({
           disease,
-          userId, // ✅ Corrected - ensure userId is passed
-          userInputs: formData, // ✅ Corrected from userData to userInputs
+          userId,
+          userInputs: formData, // Keep full form data (including name) for records
           predictionResult: riskLevel,
           probability: result.probability,
         }),
       });
-
+  
       if (!saveResponse.ok) {
         const saveError = await saveResponse.json();
         console.error("Failed to save prediction data:", saveError.message);
         throw new Error(`Failed to save prediction data: ${saveError.message}`);
       }
-
+  
       console.log("Prediction data saved successfully!");
     } catch (error) {
       console.error("Error:", error);
@@ -405,6 +412,7 @@ const Prediction = () => {
       setLoading(false);
     }
   };
+  
 
   const normalValues = {
     heart: {
@@ -483,7 +491,8 @@ const Prediction = () => {
 
       doc.setFontSize(13);
       doc.setFont("helvetica", "semi-bold");
-      doc.text("Patient Name: Debjit Saha", 15, 57);
+      const patientName = formData["user_name"] || "N/A"
+      doc.text(`Patient Name: ${patientName}`, 15, 57);
       const patientAge = formData["age"] || "N/A"; // Get age from formData
       doc.text(`Age: ${patientAge}`, 15, 62);
       doc.text("Sex: Male", 15, 67);
@@ -510,7 +519,7 @@ const Prediction = () => {
       // Table Content
       doc.setFont("helvetica", "normal");
       diseaseFields[disease]
-        .filter(field => field.name !== "age" && field.name !== "gender" && field.name!=="sex") // Exclude age and gender
+        .filter(field => field.name !== "age" && field.name !== "gender" && field.name !== "sex" && field.name!="user_name") // Exclude age and gender
         .forEach((field) => {
           let value = formData[field.name] || "N/A";
           let normalInfo = normalValues[disease][field.name] || { normal: "--", unit: "--" };
@@ -559,7 +568,7 @@ const Prediction = () => {
       doc.setTextColor(0, 0, 0);
       tableY += rowHeight;
       doc.text("Probability", tableX + 10, tableY + 7);
-      doc.text(`${riskPercentage}`, tableX + columnWidths[0] + 15, tableY + 7);
+      doc.text($`{riskPercentage}`, tableX + columnWidths[0] + 15, tableY + 7);
       // Footer Disclaimer
       const pageWidth = doc.internal.pageSize.width; // Get page width
       const pageHeight = doc.internal.pageSize.height; // Get page height
@@ -578,6 +587,7 @@ const Prediction = () => {
       doc.save(`Prediction_${disease}_certificate.pdf`);
     };
   };
+  
 
 
   return (
@@ -627,21 +637,22 @@ const Prediction = () => {
                         </select>
                       ) : (
                         <input
-                          type="number"
+                          type={field.type === "text" ? "text" : "number"}
                           name={field.name}
                           value={formData[field.name] || ""}
                           onChange={handleInputChange}
                           placeholder={field.label}
                           className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
+
                       )}
                     </div>
                   ))}
                   <button
                     type="button"
                     className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${loading
-                        ? "bg-gray-500 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-600"
+                      ? "bg-gray-500 cursor-not-allowed"
+                      : "bg-blue-500 hover:bg-blue-600"
                       }`}
                     onClick={handlePrediction}
                     disabled={loading}

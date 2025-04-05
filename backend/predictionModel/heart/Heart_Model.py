@@ -1,82 +1,92 @@
 import json
 import numpy as np
 import pandas as pd
-import joblib  # To save the scaler
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import classification_report, confusion_matrix
-from imblearn.combine import SMOTETomek
-from imblearn.under_sampling import RandomUnderSampler
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense, Dropout
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.utils import class_weight
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.callbacks import EarlyStopping
 import matplotlib.pyplot as plt
+import tensorflow as tf
+import random
+
+# Set seeds for reproducibility
+seed = 42
+np.random.seed(seed)
+tf.random.set_seed(seed)
+random.seed(seed)
 
 # Load JSON dataset
 with open('heart_improved_xgb.json', 'r') as file:
     data = json.load(file)
 
-# Convert to DataFrame
 df = pd.DataFrame(data)
 
 # Features & Target
 X = df.drop('target', axis=1)
 y = df['target']
 
-# Normalize features using MinMaxScaler
+# Normalize features
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X)
-
-# Save the scaler
 joblib.dump(scaler, 'scaler.pkl')
 
-# Apply RandomUnderSampler to balance dataset
-rus = RandomUnderSampler(random_state=42)
-X_resampled, y_resampled = rus.fit_resample(X_scaled, y)
-
-# Apply SMOTETomek for further balancing
-smt = SMOTETomek(random_state=42)
-X_final, y_final = smt.fit_resample(X_resampled, y_resampled)
-
 # Train-Test Split
-X_train, X_test, y_train, y_test = train_test_split(X_final, y_final, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=seed, stratify=y)
 
-# Build Neural Network with 1024 neurons in the first layer
+# Calculate class weights to handle imbalance
+weights = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_train), y=y_train)
+class_weights = dict(enumerate(weights))
+
+# Build model
 model = Sequential([
-    Dense(1024, activation='relu', input_shape=(X_train.shape[1],)),
-    Dropout(0.5),
-    Dense(512, activation='relu'),
+    Dense(128, activation='relu', input_shape=(X_train.shape[1],), kernel_regularizer=l2(0.001)),
+    BatchNormalization(),
     Dropout(0.4),
-    Dense(256, activation='relu'),
-    Dropout(0.4),
-    Dense(128, activation='relu'),
+
+    Dense(64, activation='relu', kernel_regularizer=l2(0.001)),
+    BatchNormalization(),
     Dropout(0.3),
-    Dense(64, activation='relu'),
+
+    Dense(32, activation='relu', kernel_regularizer=l2(0.001)),
+    Dropout(0.2),
+
     Dense(1, activation='sigmoid')
 ])
 
-# Compile the model
-model.compile(optimizer=Adam(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
 
-# Train the model
-history = model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test))
+# Early stopping
+early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-# Save the trained model
-model.save('heart_disease_model.h5')
+# Train
+history = model.fit(
+    X_train, y_train,
+    epochs=100,
+    batch_size=32,
+    validation_data=(X_test, y_test),
+    class_weight=class_weights,
+    callbacks=[early_stop],
+    verbose=1
+)
 
-# Predictions and evaluation
+# Save model
+model.save('heart_disease_model_v2.h5')
+
+# Evaluate
 y_pred_probs = model.predict(X_test)
 y_pred = (y_pred_probs > 0.5).astype("int32")
 
-# Evaluation metrics
 print("Classification Report:\n", classification_report(y_test, y_pred))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print(f"✅ Test Accuracy: {accuracy_score(y_test, y_pred):.4f}")
 
-# Test Accuracy
-loss, accuracy = model.evaluate(X_test, y_test)
-print(f"Test Accuracy: {accuracy:.4f}")
-
-# Plot training history
+# Plot history
 plt.figure(figsize=(12, 5))
 
 plt.subplot(1, 2, 1)
@@ -95,4 +105,5 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
 
+plt.tight_layout()
 plt.show()
