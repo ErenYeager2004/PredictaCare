@@ -495,7 +495,8 @@ const Prediction = () => {
       doc.text(`Patient Name: ${patientName}`, 15, 57);
       const patientAge = formData["age"] || "N/A"; // Get age from formData
       doc.text(`Age: ${patientAge}`, 15, 62);
-      doc.text("Sex: Male", 15, 67);
+      const patientSex = formData["gender"] || "N/A"
+      doc.text(`Sex: ${patientSex}`, 15, 67);
 
       doc.line(15, 70, 195, 70);
 
@@ -568,7 +569,7 @@ const Prediction = () => {
       doc.setTextColor(0, 0, 0);
       tableY += rowHeight;
       doc.text("Probability", tableX + 10, tableY + 7);
-      doc.text($`{riskPercentage}`, tableX + columnWidths[0] + 15, tableY + 7);
+      doc.text(`${riskPercentage}`, tableX + columnWidths[0] + 15, tableY + 7);
       // Footer Disclaimer
       const pageWidth = doc.internal.pageSize.width; // Get page width
       const pageHeight = doc.internal.pageSize.height; // Get page height
