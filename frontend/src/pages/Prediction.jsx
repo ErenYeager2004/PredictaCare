@@ -116,7 +116,18 @@ const diseaseFields = {
     { name: "bmi", label: "BMI", type: "number" },
     { name: "amh", label: "AMH (ng/mL)", type: "number" },
     { name: "lh", label: "LH (mIU/mL)", type: "number" },
+    { name: "fsh", label: "FSH (mIU/mL)", type: "number" },
     { name: "fsh_lh", label: "FSH/LH Ratio", type: "number" },
+    { name: "cycle_length", label: "Cycle Length (days)", type: "number" },
+    {
+      name: "cycle_regularity",
+      label: "Cycle Regularity",
+      type: "select",
+      options: [
+        { label: "Regular", value: 0 },
+        { label: "Irregular", value: 1 },
+      ],
+    },
     {
       name: "weight_gain",
       label: "Weight Gain",
@@ -162,16 +173,15 @@ const diseaseFields = {
         { label: "Yes", value: 1 },
       ],
     },
-    { name: "cycle_length", label: "Cycle Length (days)", type: "number" },
     { name: "follicle_L", label: "Follicle No. (Left)", type: "number" },
     { name: "follicle_R", label: "Follicle No. (Right)", type: "number" },
+    { name: "follicle_size_L", label: "Follicle Size (Left) (mm)", type: "number" },
+    { name: "follicle_size_R", label: "Follicle Size (Right) (mm)", type: "number" },
     { name: "tsh", label: "TSH (mIU/L)", type: "number" },
-    {
-      name: "endometrium",
-      label: "Endometrium Thickness (mm)",
-      type: "number",
-    },
+    { name: "endometrium", label: "Endometrium Thickness (mm)", type: "number" },
+    { name: "prl", label: "Prolactin (ng/mL)", type: "number" },
   ],
+  
   stroke: [
     { name: "user_name", label: "Full Name", type: "text" },
     {
