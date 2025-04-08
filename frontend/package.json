@@ -14,6 +14,7 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@google/generative-ai": "^0.24.0",
     "@tailwindcss/vite": "^4.0.14",
+    "@vercel/speed-insights": "^1.2.0",
     "axios": "^1.8.2",
     "framer-motion": "^12.5.0",
     "install": "^0.13.0",

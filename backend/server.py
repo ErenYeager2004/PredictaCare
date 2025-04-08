@@ -19,14 +19,14 @@ MODEL_FILES = {
     "heart": "heart_disease_model_v2.h5",
     "diabetes": "diabetes_model.h5",
     "stroke": "stroke_model.h5",
-    "pcos": "pcos_model.h5"
+    "pcos": "pcos_modelV2.h5"
 }
 
 SCALER_FILES = {
     "heart": "scaler.pkl",
     "diabetes": "diabetes_scaler.pkl",
     "stroke": "stroke_scaler.pkl",
-    "pcos": "pcos_scaler.pkl"
+    "pcos": "pcos_scalerv5.pkl"
 }
 
 # Define input fields per disease
@@ -34,7 +34,13 @@ DISEASE_FIELDS = {
     "heart": ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal"],
     "diabetes": ["pregnancies", "glucose", "blood_pressure", "skin_thickness", "insulin", "bmi", "dpf", "age"],
     "stroke": ["gender", "age", "hypertension", "heart_disease", "ever_married", "work_type", "residence_type", "avg_glucose_level", "bmi", "smoking_status"],
-    "pcos": ["age", "bmi", "amh", "lh", "fsh_lh", "weight_gain", "hair_growth", "skin_darkening", "hair_loss", "pimples", "cycle_length", "follicle_L", "follicle_R", "tsh", "endometrium"]
+    "pcos": [
+        "age", "bmi", "amh", "lh", "fsh", "fsh_lh", "cycle_length", "cycle_regularity",
+        "weight_gain", "hair_growth", "skin_darkening", "hair_loss", "pimples",
+        "follicle_L", "follicle_R", "follicle_size_L", "follicle_size_R",
+        "tsh", "endometrium", "prl"
+    ]
+
 }
 
 # Load models and scalers
