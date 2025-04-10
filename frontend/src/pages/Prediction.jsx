@@ -112,15 +112,15 @@ const diseaseFields = {
   ],
   pcos: [
     { name: "user_name", label: "Full Name", type: "text" },
-    { name: "age", label: "Age (in years)", type: "number" },
-    { name: "bmi", label: "BMI", type: "number" },
-    { name: "amh", label: "AMH (ng/mL)", type: "number" },
-    { name: "lh", label: "LH (mIU/mL)", type: "number" },
-    { name: "fsh", label: "FSH (mIU/mL)", type: "number" },
-    { name: "fsh_lh", label: "FSH/LH Ratio", type: "number" },
-    { name: "cycle_length", label: "Cycle Length (days)", type: "number" },
+    { name: "Age (yrs)", label: "Age (in years)", type: "number" },
+    { name: "BMI", label: "BMI", type: "number" },
+    { name: "AMH(ng/mL)", label: "AMH (ng/mL)", type: "number" },
+    { name: "LH(mIU/mL)", label: "LH (mIU/mL)", type: "number" },
+    { name: "FSH(mIU/mL)", label: "FSH (mIU/mL)", type: "number" },
+    { name: "FSH/LH", label: "FSH/LH Ratio", type: "number" },
+    { name: "Cycle length(days)", label: "Cycle Length (days)", type: "number" },
     {
-      name: "cycle_regularity",
+      name: "Cycle(R/I)",
       label: "Cycle Regularity",
       type: "select",
       options: [
@@ -129,7 +129,7 @@ const diseaseFields = {
       ],
     },
     {
-      name: "weight_gain",
+      name: "Weight gain(Y/N)",
       label: "Weight Gain",
       type: "select",
       options: [
@@ -138,7 +138,7 @@ const diseaseFields = {
       ],
     },
     {
-      name: "hair_growth",
+      name: "hair growth(Y/N)",
       label: "Hair Growth",
       type: "select",
       options: [
@@ -147,7 +147,7 @@ const diseaseFields = {
       ],
     },
     {
-      name: "skin_darkening",
+      name: "Skin darkening (Y/N)",
       label: "Skin Darkening",
       type: "select",
       options: [
@@ -156,7 +156,7 @@ const diseaseFields = {
       ],
     },
     {
-      name: "hair_loss",
+      name: "Hair loss(Y/N)",
       label: "Hair Loss",
       type: "select",
       options: [
@@ -165,7 +165,7 @@ const diseaseFields = {
       ],
     },
     {
-      name: "pimples",
+      name: "Pimples(Y/N)",
       label: "Pimples",
       type: "select",
       options: [
@@ -173,13 +173,13 @@ const diseaseFields = {
         { label: "Yes", value: 1 },
       ],
     },
-    { name: "follicle_L", label: "Follicle No. (Left)", type: "number" },
-    { name: "follicle_R", label: "Follicle No. (Right)", type: "number" },
-    { name: "follicle_size_L", label: "Follicle Size (Left) (mm)", type: "number" },
-    { name: "follicle_size_R", label: "Follicle Size (Right) (mm)", type: "number" },
-    { name: "tsh", label: "TSH (mIU/L)", type: "number" },
-    { name: "endometrium", label: "Endometrium Thickness (mm)", type: "number" },
-    { name: "prl", label: "Prolactin (ng/mL)", type: "number" },
+    { name: "Follicle No. (L)", label: "Follicle No. (Left)", type: "number" },
+    { name: "Follicle No. (R)", label: "Follicle No. (Right)", type: "number" },
+    { name: "Avg. F size (L) (mm)", label: "Follicle Size (Left) (mm)", type: "number" },
+    { name: "Avg. F size (R) (mm)", label: "Follicle Size (Right) (mm)", type: "number" },
+    { name: "TSH (mIU/L)", label: "TSH (mIU/L)", type: "number" },
+    { name: "Endometrium (mm)", label: "Endometrium Thickness (mm)", type: "number" },
+    { name: "PRL(ng/mL)", label: "Prolactin (ng/mL)", type: "number" },
   ],
   
   stroke: [

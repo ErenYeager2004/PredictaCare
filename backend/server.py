@@ -35,11 +35,12 @@ DISEASE_FIELDS = {
     "diabetes": ["pregnancies", "glucose", "blood_pressure", "skin_thickness", "insulin", "bmi", "dpf", "age"],
     "stroke": ["gender", "age", "hypertension", "heart_disease", "ever_married", "work_type", "residence_type", "avg_glucose_level", "bmi", "smoking_status"],
     "pcos": [
-        "age", "bmi", "amh", "lh", "fsh", "fsh_lh", "cycle_length", "cycle_regularity",
-        "weight_gain", "hair_growth", "skin_darkening", "hair_loss", "pimples",
-        "follicle_L", "follicle_R", "follicle_size_L", "follicle_size_R",
-        "tsh", "endometrium", "prl"
-    ]
+    'Age (yrs)', 'BMI', 'AMH(ng/mL)', 'LH(mIU/mL)', 'FSH(mIU/mL)', 'FSH/LH',
+    'Cycle length(days)', 'Cycle(R/I)', 'Weight gain(Y/N)', 'hair growth(Y/N)',
+    'Skin darkening (Y/N)', 'Hair loss(Y/N)', 'Pimples(Y/N)', 'Follicle No. (L)',
+    'Follicle No. (R)', 'Avg. F size (L) (mm)', 'Avg. F size (R) (mm)',
+    'TSH (mIU/L)', 'Endometrium (mm)', 'PRL(ng/mL)'
+]
 
 }
 
