@@ -55,7 +55,7 @@ for disease, model_file in MODEL_FILES.items():
     if os.path.exists(model_path) and os.path.exists(scaler_path):
         models[disease] = load_model(model_path)
         scalers[disease] = joblib.load(scaler_path)
-        print(f"✅ Loaded model & scaler for {disease}")
+        print(f"[OK] Loaded model & scaler for {disease}")
     else:
         print(f"❌ Model or scaler missing for {disease}")
 
