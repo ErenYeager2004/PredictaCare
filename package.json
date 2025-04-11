@@ -8,8 +8,13 @@
   "admin": "cd admin && npm run dev",
   "node-backend": "cd backend && npm run server",
   "python-ml": "cd backend && python server.py",
-  "dev": "concurrently \"npm run frontend\" \"npm run admin\" \"npm run node-backend\" \"npm run python-ml\""
-  },
+  "dev": "concurrently \"npm run frontend\" \"npm run admin\" \"npm run node-backend\" \"npm run python-ml\"",
+  "build:frontend": "cd frontend && npm install && npm run build",
+  "build:admin": "cd admin && npm install && npm run build",
+  "build:backend": "cd backend && npm install",
+  "build:python": "cd backend && pip install -r requirements.txt",
+  "build": "npm run build:frontend && npm run build:admin && npm run build:backend && npm run build:python"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Deyasin-Srijon/PredictaCare.git"

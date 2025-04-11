@@ -7,4 +7,3 @@ flask
 flask-cors
 matplotlib
 joblib
-random
