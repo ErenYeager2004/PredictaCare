@@ -4,22 +4,23 @@
   "description": "PredictaCare is a comprehensive healthcare platform...",
   "main": "index.js",
   "scripts": {
-    "frontend": "cd frontend && npm run dev",
-    "admin": "cd admin && npm run dev",
-    "node-backend": "cd backend && npm run server",
-    "python-ml": "cd backend && python server.py"
+  "frontend": "cd frontend && npm run dev",
+  "admin": "cd admin && npm run dev",
+  "node-backend": "cd backend && npm run server",
+  "python-ml": "cd backend && python server.py",
+  "dev": "concurrently \"npm run frontend\" \"npm run admin\" \"npm run node-backend\" \"npm run python-ml\""
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ErenYeager2004/PredictaCare.git"
+    "url": "git+https://github.com/Deyasin-Srijon/PredictaCare.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ErenYeager2004/PredictaCare/issues"
+    "url": "https://github.com/Deyasin-Srijon/PredictaCare/issues"
   },
-  "homepage": "https://github.com/ErenYeager2004/PredictaCare#readme",
+  "homepage": "https://github.com/Deyasin-Srijon/PredictaCare#readme",
   "devDependencies": {
     "concurrently": "^9.1.2"
   },
