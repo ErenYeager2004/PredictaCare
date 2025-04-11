@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: frontend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: serve -s build
+    staticPublishPath: build
+    rootDir: frontend
+    plan: free
+
+  - type: web
+    name: admin-panel
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: serve -s build
+    staticPublishPath: build
+    rootDir: admin
+    plan: free
+
+  - type: web
+    name: node-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm run server
+    rootDir: backend
+    plan: free
+
+  - type: web
+    name: python-ml-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    rootDir: backend
+    plan: free

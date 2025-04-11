@@ -4,14 +4,13 @@
   "description": "PredictaCare is a **comprehensive healthcare platform** designed to revolutionize online medical consultations, provide seamless medicine purchases, and integrate AI-powered chatbot assistance. The project aims to bridge the gap between patients and healthcare services by offering a user-friendly, secure, and efficient platform. Additionally, we integrate **blockchain technology** to securely store patient data, ensuring transparency and immutability while supporting predictive healthcare models.",
   "main": "index.js",
   "scripts": {
-  "dev": "concurrently -n frontend,admin,node-backend,python-ml -c blue,magenta,green,cyan \"npm run frontend\" \"npm run admin\" \"npm run node-backend\" \"npm run python-ml\"",
-  "frontend": "cd frontend && npm run dev",
-  "admin": "cd admin && npm run dev",
-  "node-backend": "cd backend && npm run server",
-  "python-ml": "cd backend && python server.py",
-  "test": "echo \"Error: no test specified\" && exit 1"
-}
-,
+    "dev": "concurrently -n frontend,admin,node-backend,python-ml -c blue,magenta,green,cyan \"npm run frontend\" \"npm run admin\" \"npm run node-backend\" \"npm run python-ml\"",
+    "frontend": "cd frontend && npm run dev",
+    "admin": "cd admin && npm run dev",
+    "node-backend": "cd backend && npm run server",
+    "python-ml": "cd backend && python server.py",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ErenYeager2004/PredictaCare.git"
@@ -25,5 +24,8 @@
   "homepage": "https://github.com/ErenYeager2004/PredictaCare#readme",
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
   }
 }
