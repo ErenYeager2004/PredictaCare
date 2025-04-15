@@ -1,69 +1,119 @@
-import React, { useContext } from 'react'
-import { AdminContext } from '../context/AdminContext'
-import { NavLink } from 'react-router-dom'
-import { assets } from '../assets/assets'
-import { DoctorContext } from '../context/DoctorContext'
+import React, { useContext } from 'react';
+import { NavLink } from 'react-router-dom';
+import { AdminContext } from '../context/AdminContext';
+import { DoctorContext } from '../context/DoctorContext';
+import { assets } from '../assets/assets';
 
 const Sidebar = () => {
+  const { aToken } = useContext(AdminContext);
+  const { dToken } = useContext(DoctorContext);
 
-  const { aToken } = useContext(AdminContext)
-  const {dToken} = useContext(DoctorContext)
+  console.log("Admin Token:", aToken);
+  console.log("Doctor Token:", dToken);
+
   return (
-    <div className='min-h-screen bg-white border-r border-gray-200'>
-      {
-        aToken && <ul className='text-[#515151] mt-5'>
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/admin-dashboard'}>
+    <div className="min-h-screen bg-white border-r border-gray-200">
+      {/* Admin Sidebar Links */}
+      {aToken && (
+        <ul className="text-[#515151] mt-5">
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/admin-dashboard"
+          >
             <img src={assets.home_icon} alt="" />
-            <p className='hidden md:block'>Dashboard</p>
+            <p className="hidden md:block">Dashboard</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/all-appointments'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/all-appointments"
+          >
             <img src={assets.appointment_icon} alt="" />
-            <p className='hidden md:block'>Appointments</p>
+            <p className="hidden md:block">Appointments</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/add-doctor'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/add-doctor"
+          >
             <img src={assets.add_icon} alt="" />
-            <p className='hidden md:block'>Add Doctors</p>
+            <p className="hidden md:block">Add Doctors</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/doctor-list'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/doctor-list"
+          >
             <img src={assets.people_icon} alt="" />
-            <p className='hidden md:block'>Doctors List</p>
+            <p className="hidden md:block">Doctors List</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/review'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/review"
+          >
             <img src={assets.review} alt="" />
-            <p className='hidden md:block'>Prediction Review</p>
+            <p className="hidden md:block">Prediction Review</p>
           </NavLink>
         </ul>
-      }
+      )}
 
-      {
-        dToken && <ul className='text-[#515151] mt-5'>
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/doctor-dashboard'}>
+      {/* Doctor Sidebar Links */}
+      {dToken && (
+        <ul className="text-[#515151] mt-5">
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/doctor-dashboard"
+          >
             <img src={assets.home_icon} alt="" />
-            <p className='hidden md:block'>Dashboard</p>
+            <p className="hidden md:block">Dashboard</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/doctor-appointments'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/doctor-appointments"
+          >
             <img src={assets.appointment_icon} alt="" />
-            <p className='hidden md:block'>Appointments</p>
+            <p className="hidden md:block">Appointments</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/doctor-review'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/doctor-review"
+          >
             <img src={assets.review} alt="" />
-            <p className='hidden md:block'>Prediction Reviews</p>
+            <p className="hidden md:block">Prediction Reviews</p>
           </NavLink>
 
-          <NavLink className={({ isActive }) => `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`} to={'/doctor-profile'}>
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
+            }
+            to="/doctor-profile"
+          >
             <img src={assets.people_icon} alt="" />
-            <p className='hidden md:block'>Profile</p>
+            <p className="hidden md:block">Profile</p>
           </NavLink>
         </ul>
-      }
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

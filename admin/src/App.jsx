@@ -20,9 +20,9 @@ import { AdminContext } from './context/AdminContext';
 import { DoctorContext } from './context/DoctorContext';
 
 // ProtectedRoute component for role-based access
-const ProtectedRoute = ({ role, children }) => {
-  if (role !== 'admin' && role !== 'doctor') {
-    return <Navigate to="/login" />;  // Redirect to login if not authenticated
+const ProtectedRoute = ({ requiredRole, children }) => {
+  if (!requiredRole) {
+    return <Navigate to="/login" />;  // Redirect to login if no role is found
   }
   return children;  // Allow access if role matches
 };
@@ -31,7 +31,7 @@ const App = () => {
   const { aToken, userRole } = useContext(AdminContext);  // Assuming 'userRole' is set here
   const { dToken } = useContext(DoctorContext);
 
-  // Show login if no token
+  // If no tokens (both admin and doctor tokens missing), show login
   if (!aToken && !dToken) {
     return (
       <>
@@ -41,7 +41,7 @@ const App = () => {
     );
   }
 
-  // If there's a token, show the dashboard for the appropriate user
+  // If there is a token, show the correct dashboard based on the role
   return (
     <div className="bg-[#F8F9FD]">
       <ToastContainer />
@@ -59,7 +59,7 @@ const App = () => {
           <Route
             path="/admin-dashboard"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="admin">
                 <Dashboard />
               </ProtectedRoute>
             }
@@ -67,7 +67,7 @@ const App = () => {
           <Route
             path="/all-appointments"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="admin">
                 <AllAppointments />
               </ProtectedRoute>
             }
@@ -75,7 +75,7 @@ const App = () => {
           <Route
             path="/add-doctor"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="admin">
                 <AddDoctor />
               </ProtectedRoute>
             }
@@ -83,7 +83,7 @@ const App = () => {
           <Route
             path="/doctor-list"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="admin">
                 <DoctorList />
               </ProtectedRoute>
             }
@@ -91,7 +91,7 @@ const App = () => {
           <Route
             path="/review"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="admin">
                 <Review />
               </ProtectedRoute>
             }
@@ -101,7 +101,7 @@ const App = () => {
           <Route
             path="/doctor-dashboard"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="doctor">
                 <DoctorDashboard />
               </ProtectedRoute>
             }
@@ -109,7 +109,7 @@ const App = () => {
           <Route
             path="/doctor-appointments"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="doctor">
                 <DoctorAppointment />
               </ProtectedRoute>
             }
@@ -117,7 +117,7 @@ const App = () => {
           <Route
             path="/doctor-review"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="doctor">
                 <DoctorReview />
               </ProtectedRoute>
             }
@@ -125,7 +125,7 @@ const App = () => {
           <Route
             path="/doctor-profile"
             element={
-              <ProtectedRoute role={userRole}>
+              <ProtectedRoute requiredRole="doctor">
                 <DoctorProfile />
               </ProtectedRoute>
             }
