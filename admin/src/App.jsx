@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -41,6 +41,7 @@ const App = () => {
     );
   }
 
+  // If there's a token, show the dashboard for the appropriate user
   return (
     <div className="bg-[#F8F9FD]">
       <ToastContainer />
@@ -129,12 +130,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-
-          {/* Explicit Login Route */}
-          <Route path="/login" element={<Login />} />
-
-          {/* Catch-all route */}
-          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </div>
