@@ -93,7 +93,7 @@ app.use("/api/predictions", predictionRouter);
 app.post("/api/predict/:disease", async (req, res) => {
   try {
     const { disease } = req.params;
-    const flaskURL = `http://127.0.0.1:5000/predict/${disease}`; // Change to Render Flask URL in production
+    const flaskURL = `https://prediction-model-ydf5.onrender.com/predict/${disease}`; // Change to Render Flask URL in production
 
     const response = await axios.post(flaskURL, req.body, {
       headers: { "Content-Type": "application/json" },

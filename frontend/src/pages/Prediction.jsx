@@ -364,7 +364,7 @@ const Prediction = () => {
       const { user_name, ...predictionData } = formData;
   
       // Step 1: Get the prediction from the backend
-      const response = await fetch(`http://127.0.0.1:5000/predict/${disease}`, {
+      const response = await fetch(`https://prediction-model-ydf5.onrender.com/predict/${disease}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -393,7 +393,7 @@ const Prediction = () => {
       // Step 2: Save the prediction and user data to MongoDB
       const userId = userData?._id || "guest";
   
-      const saveResponse = await fetch("http://127.0.0.1:4000/api/predictions/savePrediction", {
+      const saveResponse = await fetch("https://predictacare-1.onrender.com/api/predictions/savePrediction", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
