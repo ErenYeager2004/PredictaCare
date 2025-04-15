@@ -32,37 +32,28 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(helmet());
 
-// ✅ CORS Configuration
-const allowedOrigins = [
-  "http://localhost:5173", // React frontend development URL
-  "http://localhost:5174", // Admin panel development URL
-  "http://127.0.0.1:5000", // Flask backend URL for prediction
-  "http://localhost:4000", // Node backend
-  "*", // For development (be cautious in production)
-];
+// ✅ Resolve __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+// ✅ CORS Setup for dynamic or wildcard origin
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps or curl) or from known Render domains
+      if (!origin || origin.includes("onrender.com") || origin.startsWith("http://localhost")) {
         callback(null, true);
       } else {
         callback(new Error("❌ CORS not allowed for this origin"));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "token",
-      "atoken",
-      "dtoken",
-    ],
+    allowedHeaders: ["Content-Type", "Authorization", "token", "atoken", "dtoken"],
     credentials: true,
   })
 );
 
-// ✅ Content Security Policy (CSP)
+// ✅ Content Security Policy
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
@@ -70,16 +61,12 @@ app.use(
       scriptSrc: ["'self'", "https://checkout.razorpay.com"],
       frameSrc: ["'self'", "https://api.razorpay.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-      connectSrc: [
-        "'self'",
-        "http://127.0.0.1:5000",
-        "http://127.0.0.1:4000",
-      ],
+      connectSrc: ["'self'", "http://127.0.0.1:5000", "http://127.0.0.1:4000"],
     },
   })
 );
 
-// ✅ Rate Limiter
+// ✅ Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -87,7 +74,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ✅ Handle Preflight requests
+// ✅ Handle preflight
 app.options("*", cors());
 
 // ✅ API Routes
@@ -96,7 +83,7 @@ app.use("/api/doctor", doctorRouter);
 app.use("/api/user", userRouter);
 app.use("/api/predictions", predictionRouter);
 
-// ✅ Proxy prediction requests to Flask backend
+// ✅ Proxy to Flask server
 app.post("/api/predict/:disease", async (req, res) => {
   try {
     const { disease } = req.params;
@@ -118,40 +105,32 @@ app.get("/health", (req, res) => {
   res.status(200).json({ message: "✅ API is running smoothly!" });
 });
 
-// ✅ Serve React Frontends
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve the user frontend (React)
+// ✅ Serve User Frontend (React)
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-// Serve the admin panel at /admin
+// ✅ Serve Admin Panel (React)
 app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
-app.use("/assets", express.static(path.join(__dirname, "../admin/dist/assets")));
+app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets")));
 
-// ✅ Catch-all handler for React frontend routing
+// ✅ Routing fallback for React apps
+app.get("/admin/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../admin/dist/index.html"));
+});
+
 app.get("*", (req, res) => {
-  if (
-    req.path.startsWith("/api") ||
-    req.path.startsWith("/admin") ||
-    req.path.startsWith("/assets")
-  ) {
-    res.status(404).json({ error: "Not Found" });
-  } else {
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-  }
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
 });
 
 // ✅ Global Error Middleware
 app.use(errorHandler);
 
-// ✅ Fallback Error Handler
+// ✅ Final Fallback
 app.use((err, req, res, next) => {
   console.error("❗ Global Error:", err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-// ✅ Start Server
+// ✅ Start server
 app.listen(port, "0.0.0.0", () =>
   console.log(`🚀 Server running at: http://localhost:${port}`)
 );
