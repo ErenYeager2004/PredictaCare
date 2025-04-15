@@ -61,7 +61,11 @@ app.use(
       scriptSrc: ["'self'", "https://checkout.razorpay.com"],
       frameSrc: ["'self'", "https://api.razorpay.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-      connectSrc: ["'self'", "http://127.0.0.1:5000", "http://127.0.0.1:4000"],
+      connectSrc: [
+        "'self'",
+        "http://127.0.0.1:5000", // for local flask during dev
+        "https://predictacare.onrender.com", // allow fetch requests from the browser
+      ],
     },
   })
 );
