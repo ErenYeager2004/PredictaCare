@@ -64,7 +64,7 @@ app.use(
       connectSrc: [
         "'self'",
         "http://127.0.0.1:5000", // for local flask during dev
-        "https://predictacare.onrender.com", // allow fetch requests from the browser
+        "https://predictacare-1.onrender.com/", // allow fetch requests from the browser
       ],
     },
   })
