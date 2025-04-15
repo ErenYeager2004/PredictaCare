@@ -1,57 +1,138 @@
-import React, { useContext } from 'react'
-import Login from './pages/Login'
-import {ToastContainer,toast} from 'react-toastify'
+import React, { useContext } from 'react';
+import { Route, Routes, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { AdminContext } from './context/AdminContext';
+
+import Login from './pages/Login';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
-import { Route, Routes } from 'react-router-dom';
 import Dashboard from './pages/Admin/Dashboard';
-import AllAppoinments from './pages/Admin/AllAppointments';
+import AllAppointments from './pages/Admin/AllAppointments';
 import AddDoctor from './pages/Admin/AddDoctor';
 import DoctorList from './pages/Admin/DoctorList';
-import { DoctorContext } from './context/DoctorContext';
+import Review from './pages/Admin/AdminReviewPage';
 import DoctorDashboard from './pages/Doctor/DoctorDashboard';
 import DoctorAppointment from './pages/Doctor/DoctorAppointment';
 import DoctorProfile from './pages/Doctor/DoctorProfile';
-import Review from './pages/Admin/AdminReviewPage'
-import DoctorReview from './pages/Doctor/DoctorReviewPage'
+import DoctorReview from './pages/Doctor/DoctorReviewPage';
 
+import { AdminContext } from './context/AdminContext';
+import { DoctorContext } from './context/DoctorContext';
+
+// ProtectedRoute component for role-based access
+const ProtectedRoute = ({ role, children }) => {
+  if (role !== 'admin' && role !== 'doctor') {
+    return <Navigate to="/login" />;  // Redirect to login if not authenticated
+  }
+  return children;  // Allow access if role matches
+};
 
 const App = () => {
+  const { aToken, userRole } = useContext(AdminContext);  // Assuming 'userRole' is set here
+  const { dToken } = useContext(DoctorContext);
 
-  const {aToken} = useContext(AdminContext)
-  const {dToken} = useContext(DoctorContext)
-  return aToken || dToken ? (
-    <div className='bg-[#F8F9FD]'>
-      <ToastContainer/>
-      <Navbar/>
+  // Show login if no token
+  if (!aToken && !dToken) {
+    return (
+      <>
+        <Login />
+        <ToastContainer />
+      </>
+    );
+  }
 
-      <div className='flex items-start'>
-        <Sidebar/>
+  return (
+    <div className="bg-[#F8F9FD]">
+      <ToastContainer />
+      <Navbar />
+      <div className="flex items-start">
+        <Sidebar />
         <Routes>
-          {/* Admin Route*/}
-          <Route path='/' element={<></>}/>
-          <Route path='/admin-dashboard' element={<Dashboard/>}/>
-          <Route path='/all-appointments' element={<AllAppoinments/>}/>
-          <Route path='/add-doctor' element={<AddDoctor/>}/>
-          <Route path='/doctor-list' element={<DoctorList/>}/>
-          <Route path='/review' element={<Review/>}/>
+          {/* Redirect root to dashboard for admin or doctor */}
+          <Route
+            path="/"
+            element={<Navigate to={userRole === 'admin' ? '/admin-dashboard' : '/doctor-dashboard'} />}
+          />
 
-          {/* Doctor Route*/}
-          <Route path='/doctor-dashboard' element={<DoctorDashboard/>}/>
-          <Route path='/doctor-appointments' element={<DoctorAppointment/>}/>
-          <Route path='/doctor-review' element={<DoctorReview/>}/>
-          <Route path='/doctor-profile' element={<DoctorProfile/>}/>
+          {/* Admin Routes */}
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute role={userRole}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/all-appointments"
+            element={
+              <ProtectedRoute role={userRole}>
+                <AllAppointments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-doctor"
+            element={
+              <ProtectedRoute role={userRole}>
+                <AddDoctor />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-list"
+            element={
+              <ProtectedRoute role={userRole}>
+                <DoctorList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/review"
+            element={
+              <ProtectedRoute role={userRole}>
+                <Review />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Doctor Routes */}
+          <Route
+            path="/doctor-dashboard"
+            element={
+              <ProtectedRoute role={userRole}>
+                <DoctorDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-appointments"
+            element={
+              <ProtectedRoute role={userRole}>
+                <DoctorAppointment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-review"
+            element={
+              <ProtectedRoute role={userRole}>
+                <DoctorReview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctor-profile"
+            element={
+              <ProtectedRoute role={userRole}>
+                <DoctorProfile />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </div>
-  ) : (
-    <>
-      <Login />
-      <ToastContainer/>
-    </>
-  )
-}
+  );
+};
 
-export default App
+export default App;
