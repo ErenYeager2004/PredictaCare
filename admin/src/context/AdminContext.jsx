@@ -1,6 +1,7 @@
 import axios from "axios";
 import { createContext, useState } from "react";
 import { toast } from "react-toastify";
+
 export const AdminContext = createContext();
 
 const AdminContextProvider = (props) => {
@@ -13,7 +14,25 @@ const AdminContextProvider = (props) => {
   const [dashData, setDashData] = useState(false);
   const [predictions, setPredictions] = useState([]);
 
+  // Function to check token expiry
+  const checkTokenExpiry = () => {
+    const token = localStorage.getItem("aToken");
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expiry = payload.exp * 1000;
+      if (expiry < Date.now()) {
+        // Token has expired
+        localStorage.removeItem("aToken");
+        setAToken(null); // Set token state to null
+        toast.error("Your session has expired, please log in again.");
+        return false; // Token is expired
+      }
+    }
+    return true; // Token is valid
+  };
+
   const getAllDoctors = async () => {
+    if (!checkTokenExpiry()) return; // Check token before making the API call
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/admin/all-doctors`,
@@ -31,6 +50,7 @@ const AdminContextProvider = (props) => {
   };
 
   const changeAvailability = async (docId) => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/admin/change-availability`,
@@ -49,6 +69,7 @@ const AdminContextProvider = (props) => {
   };
 
   const getAllAppointments = async () => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.get(`${backendUrl}/api/admin/appointments`, {
         headers: { aToken },
@@ -64,6 +85,7 @@ const AdminContextProvider = (props) => {
   };
 
   const cancelAppointment = async (appointmentId) => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/admin/cancel-appointment`,
@@ -82,6 +104,7 @@ const AdminContextProvider = (props) => {
   };
 
   const getDashData = async () => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.get(`${backendUrl}/api/admin/dashboard`, {
         headers: { aToken },
@@ -97,6 +120,7 @@ const AdminContextProvider = (props) => {
   };
 
   const getAllPredictions = async () => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.get(`${backendUrl}/api/admin/predictions`, {
         headers: { aToken },
@@ -112,6 +136,7 @@ const AdminContextProvider = (props) => {
   };
 
   const assignDoctorToReview = async (predictionId, doctorId) => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.post(
         `${backendUrl}/api/admin/assign-review`,
@@ -130,13 +155,13 @@ const AdminContextProvider = (props) => {
   };
 
   const sendForReview = async (predictionId, doctorId) => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.post(
-        `${backendUrl}/api/admin/send-review/${predictionId}`, // Route must match backend
-        { doctorId }, // Ensure doctorId is in the body
+        `${backendUrl}/api/admin/send-review/${predictionId}`,
+        { doctorId },
         { headers: { aToken } }
       );
-
       if (data.success) {
         toast.success(data.message);
         getAllPredictions();
@@ -144,10 +169,6 @@ const AdminContextProvider = (props) => {
         toast.error(data.message);
       }
     } catch (error) {
-      console.error(
-        "Error sending for review:",
-        error.response?.data || error.message
-      );
       toast.error(
         `Failed to send for review: ${
           error.response?.data?.message || "Unknown error"
@@ -157,6 +178,7 @@ const AdminContextProvider = (props) => {
   };
 
   const deletePrediction = async (predictionId) => {
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.delete(
         `${backendUrl}/api/admin/delete/${predictionId}`,
@@ -164,7 +186,7 @@ const AdminContextProvider = (props) => {
       );
       if (data.success) {
         toast.success("Prediction deleted successfully");
-        getAllPredictions(); // Refresh predictions list
+        getAllPredictions();
       } else {
         toast.error(data.message);
       }
@@ -172,16 +194,15 @@ const AdminContextProvider = (props) => {
       toast.error(error.response?.data?.message || "Failed to delete prediction");
     }
   };
-  
+
   const handleDelete = async (predictionId) => {
     if (!window.confirm("Are you sure you want to delete this prediction?")) return;
-
+    if (!checkTokenExpiry()) return;
     try {
       const { data } = await axios.delete(
         `${backendUrl}/api/admin/handle-delete/${predictionId}`,
         { headers: { aToken } }
       );
-
       if (data.success) {
         toast.success("Prediction deleted successfully!");
         setPredictions(predictions.filter((pred) => pred._id !== predictionId));
@@ -189,7 +210,6 @@ const AdminContextProvider = (props) => {
         toast.error(`Error: ${data.message}`);
       }
     } catch (error) {
-      console.error("Error deleting prediction:", error);
       toast.error("Failed to delete prediction. Try again.");
     }
   };
