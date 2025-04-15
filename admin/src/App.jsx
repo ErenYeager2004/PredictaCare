@@ -129,6 +129,12 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          {/* Explicit Login Route */}
+          <Route path="/login" element={<Login />} />
+
+          {/* Catch-all route */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </div>
