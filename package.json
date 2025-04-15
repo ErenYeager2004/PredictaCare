@@ -13,7 +13,7 @@
     "build:admin": "cd admin && npm install && npm run build",
     "build:backend": "cd backend && npm install",
     "build:python": "cd backend && pip install -r requirements.txt",
-    "build": "npm run build:frontend && npm run build:admin && npm run build:backend && npm run build:python"
+    "build": "npm install && npm run build:frontend && npm run build:admin && npm run build:backend && npm run build:python"
   },
   "repository": {
     "type": "git",
