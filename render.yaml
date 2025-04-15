@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: predictacare
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run dev
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
+      - key: NODE_VERSION
+        value: 18
+    autoDeploy: true
