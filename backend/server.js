@@ -18,29 +18,28 @@ import userRouter from "./routes/userRoute.js";
 import predictionRouter from "./routes/predictionRoutes.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 
-// ✅ Initialize app and port
+// ✅ Initialize app
 const app = express();
 const port = process.env.PORT || 4000;
-
-// ✅ Connect to MongoDB and Cloudinary
-connectDB();
-connectCloudinary();
-
-// ✅ Middleware Setup
-app.use(express.json());
-app.use(cookieParser());
-app.use(morgan("dev"));
-app.use(helmet());
 
 // ✅ Resolve __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ✅ CORS Setup for dynamic or wildcard origin
+// ✅ Connect to MongoDB and Cloudinary
+connectDB();
+connectCloudinary();
+
+// ✅ Middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(morgan("dev"));
+app.use(helmet());
+
+// ✅ CORS
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl) or from known Render domains
       if (!origin || origin.includes("onrender.com") || origin.startsWith("http://localhost")) {
         callback(null, true);
       } else {
@@ -53,7 +52,7 @@ app.use(
   })
 );
 
-// ✅ Content Security Policy
+// ✅ Helmet CSP
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
@@ -63,22 +62,23 @@ app.use(
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
       connectSrc: [
         "'self'",
-        "http://127.0.0.1:5000", // for local flask during dev
-        "https://predictacare-1.onrender.com/", // allow fetch requests from the browser
+        "http://127.0.0.1:5000", // local Flask dev
+        "https://predictacare-1.onrender.com", // production Flask
       ],
     },
   })
 );
 
 // ✅ Rate Limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 500,
-  message: "❗ Too many requests from this IP, please try again later.",
-});
-app.use(limiter);
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    message: "❗ Too many requests from this IP, please try again later.",
+  })
+);
 
-// ✅ Handle preflight
+// ✅ Handle OPTIONS
 app.options("*", cors());
 
 // ✅ API Routes
@@ -87,19 +87,19 @@ app.use("/api/doctor", doctorRouter);
 app.use("/api/user", userRouter);
 app.use("/api/predictions", predictionRouter);
 
-// ✅ Proxy to Flask server
+// ✅ Proxy to Python Flask for disease predictions
 app.post("/api/predict/:disease", async (req, res) => {
   try {
     const { disease } = req.params;
-    const pythonBackendURL = `http://127.0.0.1:5000/predict/${disease}`;
+    const flaskURL = `http://127.0.0.1:5000/predict/${disease}`; // Change to Render Flask URL in production
 
-    const response = await axios.post(pythonBackendURL, req.body, {
+    const response = await axios.post(flaskURL, req.body, {
       headers: { "Content-Type": "application/json" },
     });
 
     res.json(response.data);
   } catch (error) {
-    console.error("🔴 Error connecting to Python backend:", error.message);
+    console.error("🔴 Error connecting to Flask backend:", error.message);
     res.status(500).json({ error: "Failed to connect to prediction service" });
   }
 });
@@ -109,15 +109,15 @@ app.get("/health", (req, res) => {
   res.status(200).json({ message: "✅ API is running smoothly!" });
 });
 
-// ✅ Serve User Frontend (React)
+// ✅ Serve React Frontend (User)
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets")));
 
-// ✅ Serve Admin Panel (React)
-// ✅ Serve Admin Panel (React)
+// ✅ Serve React Admin Panel
 app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets")));
 app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
 
-// ✅ Routing fallback for React apps
+// ✅ React Router fallback
 app.get("/admin/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../admin/dist/index.html"));
 });
@@ -129,13 +129,13 @@ app.get("*", (req, res) => {
 // ✅ Global Error Middleware
 app.use(errorHandler);
 
-// ✅ Final Fallback
+// ✅ Final fallback
 app.use((err, req, res, next) => {
   console.error("❗ Global Error:", err.stack);
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-// ✅ Start server
-app.listen(port, "0.0.0.0", () =>
-  console.log(`🚀 Server running at: http://localhost:${port}`)
-);
+// ✅ Start Server
+app.listen(port, "0.0.0.0", () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+});

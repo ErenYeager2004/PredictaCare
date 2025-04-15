@@ -4,14 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/admin/', // 🔥 Important for correct asset paths in production
+
   plugins: [react(), tailwindcss()],
-  
-  // Set server port for development
+
   server: {
-    port: 5174, // Admin panel specific port
+    port: 5174, // Admin panel port (dev only)
   },
 
-  // Use environment variables for the backend URL (VITE_BACKEND_URL should be set in .env files)
   define: {
     'process.env': process.env,
   },
