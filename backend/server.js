@@ -62,8 +62,10 @@ app.use(
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
       connectSrc: [
         "'self'",
-        "http://127.0.0.1:5000", // local Flask dev
-        "https://predictacare-1.onrender.com", // production Flask
+        "http://127.0.0.1:5000",
+        "https://predictacare-1.onrender.com",
+        "https://lumberjack.razorpay.com", // ✅ for Razorpay analytics
+        "https://generativelanguage.googleapis.com", // ✅ for Gemini API
       ],
     },
   })
