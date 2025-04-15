@@ -113,8 +113,9 @@ app.get("/health", (req, res) => {
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
 // ✅ Serve Admin Panel (React)
-app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
+// ✅ Serve Admin Panel (React)
 app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets")));
+app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
 
 // ✅ Routing fallback for React apps
 app.get("/admin/*", (req, res) => {
