@@ -6,6 +6,7 @@ import { v2 as cloudinary } from 'cloudinary'
 import doctorModel from '../models/doctorModel.js'
 import appointmentModel from '../models/appointmentModel.js'
 import razorpay from 'razorpay'
+import crypto from "crypto";
 
 // api to register user
 const registerUser = async (req, res) => {
@@ -238,8 +239,6 @@ const paymentRazorpay= async (req,res) => {
 
 
 // api to verify payment 
-
-const crypto = require("crypto");
 
 const verifyRazorpay = async (req, res) => {
   try {
