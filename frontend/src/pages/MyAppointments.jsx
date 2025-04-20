@@ -58,20 +58,36 @@ const MyAppointments = () => {
       description:"Appointment Payment",
       order_id:order.id,
       receipt : order.receipt,
-      handler : async (response) =>{
-          console.log(response)
-
-          try {
-            const {data} = await axios.post(backendUrl+'/api/user/verifyRazorpay',response,{headers:{token}})
-            if (data.success) {
-              getUserAppointments()
-              navigate('/my-appointments')
-            }
-          } catch (error) {
-            console.log(error);
-            toast.error(error.message)
+      handler: async (response) => {
+        console.log(response);
+      
+        const verifyData = {
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_signature: response.razorpay_signature,
+          appointmentId: order.receipt, // ✅ include appointment ID for backend update
+        };
+      
+        try {
+          const { data } = await axios.post(
+            `${backendUrl}/api/user/verifyRazorpay`,
+            verifyData,
+            { headers: { token } }
+          );
+      
+          if (data.success) {
+            toast.success("Payment successful");
+            getUserAppointments();
+            navigate("/my-appointments");
+          } else {
+            toast.error("Payment verification failed");
           }
+        } catch (error) {
+          console.error(error);
+          toast.error("Something went wrong during verification");
+        }
       }
+
     }
 
     const rzp = new window.Razorpay(options)
