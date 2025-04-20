@@ -239,20 +239,31 @@ const paymentRazorpay= async (req,res) => {
 
 // api to verify payment 
 
-const verifyRazorpay = async (req,res)=>{
-    try {
-        const {razorpay_order_id}  = req.body 
-        const orderInfo = await razorpayInstance.orders.fetch(razorpay_order_id)
-        
-        if (orderInfo.status==='paid') {
-            await appointmentModel.findByIdAndUpdate(orderInfo.receipt,{payment:true})
-            res.json({success:true,message:"Payment Successfull"})
-        }else{
-            res.json({success:false,message:"Payment Failed"})
-        }
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })    
+const crypto = require("crypto");
+
+const verifyRazorpay = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    // Generate expected signature
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (expectedSignature === razorpay_signature) {
+      // Assuming your receipt = appointment ID
+      const order = await razorpayInstance.orders.fetch(razorpay_order_id);
+      await appointmentModel.findByIdAndUpdate(order.receipt, { payment: true });
+
+      return res.json({ success: true, message: "Payment verified successfully" });
+    } else {
+      return res.json({ success: false, message: "Signature verification failed" });
     }
+  } catch (error) {
+    console.error(error);
+    return res.json({ success: false, message: error.message });
+  }
 }
+
 export { registerUser, loginUser, getProfile, updateProfile, bookAppointment,listAppointment,cancelAppointment,paymentRazorpay,verifyRazorpay}
