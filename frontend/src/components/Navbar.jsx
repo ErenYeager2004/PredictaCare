@@ -34,13 +34,46 @@ const Navbar = () => {
     return (
         <div className='flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400'>
             <img onClick={() => navigate('/')} className='w-64 cursor-pointer' src={assets.logo} alt="" />
-            
             <ul className='hidden md:flex items-start gap-5 font-medium'>
-                <NavLink to='/'><li className='py-1'>HOME</li></NavLink>
-                <NavLink to='/doctors'><li className='py-1'>ALL DOCTORS</li></NavLink>
-                <NavLink to='/about'><li className='py-1'>ABOUT</li></NavLink>
-                <NavLink to='/contact'><li className='py-1'>CONTACT</li></NavLink>
+                <NavLink
+                    to='/'
+                    className={({ isActive }) =>
+                        `py-1 relative after:block after:w-full after:h-[2px] after:bg-blue-500 after:scale-x-0 after:transition-transform after:duration-300 after:origin-left hover:after:scale-x-100 ${isActive ? 'after:scale-x-100' : ''
+                        }`
+                    }
+                >
+                    <li>HOME</li>
+                </NavLink>
+                <NavLink
+                    to='/doctors'
+                    className={({ isActive }) =>
+                        `py-1 relative after:block after:w-full after:h-[2px] after:bg-blue-500 after:scale-x-0 after:transition-transform after:duration-300 after:origin-left hover:after:scale-x-100 ${isActive ? 'after:scale-x-100' : ''
+                        }`
+                    }
+                >
+                    <li>ALL DOCTORS</li>
+                </NavLink>
+                <NavLink
+                    to='/about'
+                    className={({ isActive }) =>
+                        `py-1 relative after:block after:w-full after:h-[2px] after:bg-blue-500 after:scale-x-0 after:transition-transform after:duration-300 after:origin-left hover:after:scale-x-100 ${isActive ? 'after:scale-x-100' : ''
+                        }`
+                    }
+                >
+                    <li>ABOUT</li>
+                </NavLink>
+                <NavLink
+                    to='/contact'
+                    className={({ isActive }) =>
+                        `py-1 relative after:block after:w-full after:h-[2px] after:bg-blue-500 after:scale-x-0 after:transition-transform after:duration-300 after:origin-left hover:after:scale-x-100 ${isActive ? 'after:scale-x-100' : ''
+                        }`
+                    }
+                >
+                    <li>CONTACT</li>
+                </NavLink>
             </ul>
+
+
 
             <div className='flex items-center gap-4'>
                 {
