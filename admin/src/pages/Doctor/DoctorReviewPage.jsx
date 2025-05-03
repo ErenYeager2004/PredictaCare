@@ -3,6 +3,7 @@ import { DoctorContext } from "../../context/DoctorContext";
 import { toast } from "react-toastify";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import logo from "../../assets/logo.png";
 import { assets } from "../../assets/assets";
 
 const DoctorReviewPage = () => {
@@ -42,84 +43,128 @@ const DoctorReviewPage = () => {
   // 🛠️ Generate PDF & Open in New Tab
   const handleViewResult = (prediction) => {
     const pdf = new jsPDF("p", "mm", "a4");
-
-    // ✅ Ensure prediction inputs exist
-    const inputs = prediction.userData?.inputs || prediction.inputs || {};
-
-    // ✅ Set margins and styling
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    let y = 10;
-
-    // ✅ Title Header
-    pdf.setFont("Helvetica", "bold");
-    pdf.setFontSize(18);
-    pdf.text("Patient Diagnosis Report", pageWidth / 2, y, { align: "center" });
-    y += 10;
-
-    // ✅ Patient Info Section
-    pdf.setFontSize(14);
-    pdf.setFont("Helvetica", "normal");
-    pdf.setTextColor(100);
-
-    const patientDetails = [
-      `Patient: ${prediction.userData?.name || "Unknown"}`,
-      `Email: ${prediction.userData?.email || "N/A"}`,
-      `Disease: ${prediction.disease}`,
-      `Result: ${prediction.predictionResult}`,
-      `Probability: ${prediction.probability.toFixed(2)}%`,
-    ];
-
-    patientDetails.forEach((line) => {
-      pdf.text(line, 10, y);
+  
+    const logoImg = new Image();
+    logoImg.src = logo; // your logo path
+  
+    logoImg.onload = () => {
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let y = 10;
+  
+      // 🔷 Logo
+      pdf.addImage(logoImg, "PNG", 10, y, 70, 20);
+      
+      // 🔷 Contact Info
+      pdf.setFontSize(10);
+      pdf.setTextColor(60);
+      pdf.text("Email: adminPredictaCare@gmail.com", pageWidth - 65, 15);
+      pdf.text("Phone: +91 9903469038", pageWidth - 65, 20);
+      y += 30;
+  
+      // 🔷 Title
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(22);
+      pdf.setTextColor(40, 40, 40);
+      pdf.text("Diagnosis Summary Certificate", pageWidth / 2, y, { align: "center" });
+      y += 10;
+  
+      pdf.setFontSize(12);
+      pdf.setTextColor(60);
+      pdf.text(`Disease: ${prediction.disease.toUpperCase()}`, pageWidth / 2, y, { align: "center" });
+      y += 5;
+  
+      pdf.line(15, y, pageWidth - 15, y);
+      y += 10;
+  
+      // 🔷 Patient Info
+      const patientName = prediction.userData?.name || "Unknown";
+      const probability = prediction.probability?.toFixed(2) || "N/A";
+      const result = prediction.predictionResult || "N/A";
+  
+      const date = new Date();
+      pdf.setFontSize(11);
+      pdf.setTextColor(30);
+      pdf.text(`Patient Name: ${patientName}`, 15, y);
+      pdf.text(`Date: ${date.toLocaleDateString()}`, pageWidth - 60, y);
+      y += 6;
+      pdf.text(`Prediction Result: ${result}`, 15, y);
+      pdf.text(`Time: ${date.toLocaleTimeString()}`, pageWidth - 60, y);
+      y += 6;
+      pdf.text(`Model Confidence: ${probability}%`, 15, y);
+      y += 10;
+  
+      pdf.line(15, y, pageWidth - 15, y);
+      y += 10;
+  
+      // 🔷 Section Header
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.setTextColor(40, 40, 40);
+      pdf.text("Patient Inputs", pageWidth / 2, y, { align: "center" });
       y += 8;
-    });
-
-    y += 5;
-
-    // ✅ Divider
-    pdf.setDrawColor(200);
-    pdf.line(10, y, pageWidth - 10, y);
-    y += 10;
-
-    // ✅ Patient Inputs Section
-    pdf.setFont("Helvetica", "bold");
-    pdf.setFontSize(16);
-    pdf.setTextColor(50);
-    pdf.text("Patient Inputs:", 10, y);
-    y += 8;
-
-    pdf.setFont("Helvetica", "normal");
-    pdf.setFontSize(12);
-    pdf.setTextColor(80);
-
-    if (Object.keys(inputs).length > 0) {
-      Object.entries(inputs).forEach(([key, value]) => {
-        pdf.text(`${key.replace(/_/g, " ").toUpperCase()}: ${value}`, 10, y);
+  
+      const inputs = prediction.userData?.inputs || prediction.inputs || {};
+      const inputEntries = Object.entries(inputs);
+  
+      // 🔷 Inputs Table Headers
+      if (inputEntries.length > 0) {
+        pdf.setFontSize(12);
+        pdf.setTextColor(80);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Parameter", 20, y);
+        pdf.text("Value", pageWidth - 50, y);
+        y += 6;
+  
+        pdf.setDrawColor(200);
+        pdf.line(15, y, pageWidth - 15, y);
+        y += 6;
+  
+        // 🔷 Inputs Rows
+        pdf.setFont("helvetica", "normal");
+        inputEntries.forEach(([key, value]) => {
+          const label = key.replace(/_/g, " ").toUpperCase();
+          const val = typeof value === "number" ? value.toFixed(2) : String(value);
+  
+          pdf.text(label, 20, y);
+          pdf.text(val, pageWidth - 50, y);
+          y += 7;
+  
+          // Handle page overflow
+          if (y > pageHeight - 30) {
+            pdf.addPage();
+            y = 20;
+          }
+        });
+      } else {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(12);
+        pdf.setTextColor(100);
+        pdf.text("No input data provided.", 15, y);
         y += 7;
-      });
-    } else {
-      pdf.text("No input data provided.", 10, y);
-      y += 7;
-    }
-
-    y += 5;
-
-    // ✅ Footer
-    pdf.setDrawColor(200);
-    pdf.line(10, y, pageWidth - 10, y);
-    y += 10;
-    pdf.setFont("Helvetica", "italic");
-    pdf.setFontSize(10);
-    pdf.setTextColor(150);
-    pdf.text("Generated by Health Prediction System", pageWidth / 2, y, {
-      align: "center",
-    });
-
-    // ✅ Open PDF in a new tab
-    const pdfBlob = pdf.output("blob");
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-    window.open(pdfUrl);
+      }
+  
+      y += 10;
+  
+      // 🔷 Footer
+      pdf.setDrawColor(200);
+      pdf.line(15, pageHeight - 25, pageWidth - 15, pageHeight - 25);
+      pdf.setFontSize(10);
+      pdf.setTextColor(100);
+      pdf.text(
+        "This is a computer-generated report. Please consult a medical professional for interpretation.",
+        pageWidth / 2,
+        pageHeight - 15,
+        { align: "center", maxWidth: 180 }
+      );
+  
+      // 🔷 Open PDF
+      const pdfBlob = pdf.output("blob");
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl);
+    };
   };
+  
 
   return (
     <div className="w-full max-w-6xl m-5">
