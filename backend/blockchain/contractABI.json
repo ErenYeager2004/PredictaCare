@@ -1,186 +1,122 @@
 [
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "userId",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "disease",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "userInputs",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "string",
-          "name": "predictionResult",
-          "type": "string"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "probability",
-          "type": "uint256"
-        }
-      ],
-      "name": "PredictionStored",
-      "type": "event"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_id",
-          "type": "uint256"
-        }
-      ],
-      "name": "getPrediction",
-      "outputs": [
-        {
-          "components": [
-            {
-              "internalType": "uint256",
-              "name": "id",
-              "type": "uint256"
-            },
-            {
-              "internalType": "string",
-              "name": "userId",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "disease",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "userInputs",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "predictionResult",
-              "type": "string"
-            },
-            {
-              "internalType": "uint256",
-              "name": "probability",
-              "type": "uint256"
-            }
-          ],
-          "internalType": "struct HealthPrediction.Prediction",
-          "name": "",
-          "type": "tuple"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "predictionCount",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "predictions",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "userId",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "disease",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "userInputs",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "predictionResult",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "probability",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "string",
-          "name": "_userId",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_disease",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_userInputs",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "_predictionResult",
-          "type": "string"
-        },
-        {
-          "internalType": "uint256",
-          "name": "_probability",
-          "type": "uint256"
-        }
-      ],
-      "name": "storePrediction",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    }
-  ]
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "dataHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "PredictionStored",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPredictionHash",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "id",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "dataHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct HealthPrediction.PredictionMeta",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "predictionCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "predictions",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "dataHash",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "userId",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "disease",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "userInputs",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "predictionResult",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "probability",
+        "type": "uint256"
+      }
+    ],
+    "name": "storePredictionHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -2,55 +2,40 @@
 pragma solidity ^0.8.28;
 
 contract HealthPrediction {
-    struct Prediction {
+    struct PredictionMeta {
         uint256 id;
-        string userId;
-        string disease;
-        string userInputs;
-        string predictionResult;
-        uint256 probability;
+        bytes32 dataHash; // Hash of the full prediction data
     }
 
-    mapping(uint256 => Prediction) public predictions;
+    mapping(uint256 => PredictionMeta) public predictions;
     uint256 public predictionCount;
 
     event PredictionStored(
         uint256 indexed id,
-        string userId,
-        string disease,
-        string userInputs,
-        string predictionResult,
-        uint256 probability
+        bytes32 indexed dataHash
     );
 
-    function storePrediction(
-        string memory _userId,
-        string memory _disease,
-        string memory _userInputs,
-        string memory _predictionResult,
-        uint256 _probability
+    // Accepts hash of the full prediction data stored off-chain
+    function storePredictionHash(
+        string memory userId,
+        string memory disease,
+        string memory userInputs,
+        string memory predictionResult,
+        uint256 probability
     ) public {
+        // Generate a hash off-chain and send it, OR do the hashing here
+        bytes32 hash = keccak256(
+            abi.encodePacked(userId, disease, userInputs, predictionResult, probability)
+        );
+
         predictionCount++;
-        predictions[predictionCount] = Prediction(
-            predictionCount,
-            _userId,
-            _disease,
-            _userInputs,
-            _predictionResult,
-            _probability
-        );
-        emit PredictionStored(
-            predictionCount,
-            _userId,
-            _disease,
-            _userInputs,
-            _predictionResult,
-            _probability
-        );
+        predictions[predictionCount] = PredictionMeta(predictionCount, hash);
+
+        emit PredictionStored(predictionCount, hash);
     }
 
-    function getPrediction(uint256 _id) public view returns (Prediction memory) {
-        require(_id > 0 && _id <= predictionCount, "Invalid prediction ID");
-        return predictions[_id];
+    function getPredictionHash(uint256 id) public view returns (PredictionMeta memory) {
+        require(id > 0 && id <= predictionCount, "Invalid prediction ID");
+        return predictions[id];
     }
 }

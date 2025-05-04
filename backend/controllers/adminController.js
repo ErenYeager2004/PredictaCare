@@ -20,62 +20,64 @@ const contract = new ethers.Contract(contractAddress, contractABI, adminWallet);
 
 const uploadToBlockchain = async (req, res) => {
   try {
-      const { predictionId } = req.body;
-      console.log("Fetching Prediction Data for ID:", predictionId);
+    const { predictionId } = req.body;
+    console.log("Fetching Prediction Data for ID:", predictionId);
 
-      // Fetch Prediction from MongoDB
-      const prediction = await Prediction.findById(predictionId).lean();
-      if (!prediction) {
-          console.error("Prediction not found for ID:", predictionId);
-          return res.status(404).json({ success: false, message: "Prediction not found" });
-      }
+    // Fetch Prediction from MongoDB
+    const prediction = await Prediction.findById(predictionId).lean();
+    if (!prediction) {
+      console.error("Prediction not found for ID:", predictionId);
+      return res.status(404).json({ success: false, message: "Prediction not found" });
+    }
 
-      // Check if already uploaded
-      if (prediction.status === "uploaded") {
-          console.warn("Prediction already uploaded:", predictionId);
-          return res.status(400).json({ success: false, message: "Already uploaded to blockchain" });
-      }
+    // Check if already uploaded
+    if (prediction.status === "uploaded") {
+      console.warn("Prediction already uploaded:", predictionId);
+      return res.status(400).json({ success: false, message: "Already uploaded to blockchain" });
+    }
 
-      const userId = prediction?.userData?.id ? prediction.userData.id.toString() : "0";
-      console.log("User ID for blockchain:", userId);
+    const userId = prediction?.userData?.id ? prediction.userData.id.toString() : "0";
+    const disease = prediction.disease;
+    const userInputs = JSON.stringify(prediction.userData.inputs);
+    const predictionResult = prediction.predictionResult;
+    const probabilityInt = Math.round(prediction.probability * 10000);
 
-      const probabilityInt = Math.round(prediction.probability * 10000);
+    // Ensure contract is initialized
+    if (!contract) {
+      console.error("Smart contract not initialized");
+      return res.status(500).json({ success: false, message: "Smart contract not initialized" });
+    }
 
-      // Ensure contract is initialized
-      if (!contract) {
-          console.error("Smart contract not initialized");
-          return res.status(500).json({ success: false, message: "Smart contract not initialized" });
-      }
+    let tx;
+    try {
+      console.log("Sending transaction to storePredictionHash...");
+      tx = await contract.storePredictionHash(
+        userId,
+        disease,
+        userInputs,
+        predictionResult,
+        probabilityInt
+      );
+      await tx.wait();
+      console.log("Transaction successful! Hash:", tx.hash);
+    } catch (error) {
+      console.error("Transaction Failed:", error);
+      return res.status(500).json({ success: false, message: `Blockchain transaction failed: ${error.message}` });
+    }
 
-      let tx;
-      try {
-          console.log("Sending transaction to storePrediction...");
-          tx = await contract.storePrediction(
-              userId,
-              prediction.disease,
-              JSON.stringify(prediction.userData.inputs),
-              prediction.predictionResult,
-              probabilityInt
-          );
-          await tx.wait();
-          console.log("Transaction successful! Hash:", tx.hash);
-      } catch (error) {
-          console.error("Transaction Failed:", error);
-          return res.status(500).json({ success: false, message: `Blockchain transaction failed: ${error.message}` });
-      }
+    // Update MongoDB Status
+    const updateResult = await Prediction.findByIdAndUpdate(predictionId, { status: "uploaded" });
+    if (!updateResult) {
+      console.error("Failed to update MongoDB for prediction:", predictionId);
+      return res.status(500).json({ success: false, message: "Failed to update prediction status" });
+    }
 
-      // Update MongoDB Status
-      const updateResult = await Prediction.findByIdAndUpdate(predictionId, { status: "uploaded" });
-      if (!updateResult) {
-          console.error("Failed to update MongoDB for prediction:", predictionId);
-          return res.status(500).json({ success: false, message: "Failed to update prediction status" });
-      }
-      console.log("MongoDB updated successfully for:", predictionId);
+    console.log("MongoDB updated successfully for:", predictionId);
+    res.json({ success: true, message: "Uploaded to blockchain", txHash: tx.hash });
 
-      res.json({ success: true, message: "Uploaded to blockchain", txHash: tx.hash });
   } catch (error) {
-      console.error("Blockchain Upload Error:", error);
-      res.status(500).json({ success: false, message: `Failed to upload to blockchain: ${error.message}` });
+    console.error("Blockchain Upload Error:", error);
+    res.status(500).json({ success: false, message: `Failed to upload to blockchain: ${error.message}` });
   }
 };
 
