@@ -7,7 +7,7 @@ const Footer = () => {
         <div className='flex flex-col sm:grid grid-cols-[3fr_1fr_1fr] gap-14 my-10 mt-40 text-sm'>
             <div>
                 <img className='mb-5 w-60' src={assets.logo} alt="" />
-                <p className='w-full md:w-2/3 text-gray-600 leading-6'>Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.</p>
+                <p className='w-full md:w-2/3 text-gray-600 leading-6'>Welcome to PredictaCare, your trusted partner in managing your healthcare needs conveniently and efficiently. At PredictaCare, we understand the challenges individuals face when it comes to scheduling doctor appointments and managing their health records.</p>
             </div>
 
             <div>
@@ -23,8 +23,8 @@ const Footer = () => {
             <div>
                 <p className='text-xl font-medium mb-5'>GET IN TOUCH</p>
                 <ul className='flex flex-col gap-2 text-gray-600'>
-                    <li>+1-212-456-7890</li>
-                    <li>Hack-o-NIT</li>
+                    <li>+91-212-456-7890</li>
+                    <li>GenzCoders</li>
                 </ul>
             </div>
         </div>
@@ -32,7 +32,7 @@ const Footer = () => {
             <hr className='border-gray-400'/>
             <p className='py-5 text-sm text-center'>Copyright © 2025 GenzCoders - All Right Reserved.</p>
         </div>
-    </div>
+    </div>  
   )
 }
 
