@@ -616,6 +616,7 @@ const Prediction = () => {
                 <select
                   className="block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   onChange={(e) => setDisease(e.target.value)}
+                  value={disease}
                 >
                   <option value="">Select</option>
                   <option value="heart">Heart Disease</option>
@@ -655,16 +656,16 @@ const Prediction = () => {
                           placeholder={field.label}
                           className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
-
                       )}
                     </div>
                   ))}
                   <button
                     type="button"
-                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${loading
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600"
-                      }`}
+                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${
+                      loading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    }`}
                     onClick={handlePrediction}
                     disabled={loading}
                   >
@@ -726,27 +727,31 @@ const Prediction = () => {
 
               <button
                 onClick={handleDownloadCertificate}
-                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${prediction == null ? "cursor-not-allowed opacity-50" : ""
-                  }`}
-                disabled={prediction == null} // Only disable when prediction is null or undefined
+                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${
+                  prediction == null ? "cursor-not-allowed opacity-50" : ""
+                }`}
+                disabled={prediction == null}
               >
                 Download Prediction Certificate
               </button>
-              <p className="mt-6 text-gray-500 text-sm text-center">
-                {riskMessage}
-              </p>
+              <p className="mt-6 text-gray-500 text-sm text-center">{riskMessage}</p>
             </div>
           </div>
         </div>
       )}
-      <button
-        onClick={() => navigate("/ai-suggestion")}
-        className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-purple-500 hover:bg-purple-600 transition ${prediction == null ? "cursor-not-allowed opacity-50" : ""
+
+      {/* Centered AI Suggestions Button */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => navigate("/ai-suggestion")}
+          className={`py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-purple-500 hover:bg-purple-600 transition ${
+            prediction == null ? "cursor-not-allowed opacity-50" : ""
           }`}
-        disabled={prediction == null}
-      >
-        View AI Suggestions
-      </button>
+          disabled={prediction == null}
+        >
+          View AI Suggestions
+        </button>
+      </div>
     </>
   );
 };
