@@ -181,7 +181,7 @@ const diseaseFields = {
     { name: "Endometrium (mm)", label: "Endometrium Thickness (mm)", type: "number" },
     { name: "PRL(ng/mL)", label: "Prolactin (ng/mL)", type: "number" },
   ],
-  
+
   stroke: [
     { name: "user_name", label: "Full Name", type: "text" },
     {
@@ -347,7 +347,7 @@ const Prediction = () => {
       toast.error("Please select a disease");
       return;
     }
-  
+
     // Ensure all required fields are filled
     const requiredFields = diseaseFields[disease].map((field) => field.name);
     for (let field of requiredFields) {
@@ -356,13 +356,13 @@ const Prediction = () => {
         return;
       }
     }
-  
+
     setLoading(true);
-  
+
     try {
       // Exclude "user_name" from the prediction request
       const { user_name, ...predictionData } = formData;
-  
+
       // Step 1: Get the prediction from the backend
       const response = await fetch(`https://prediction-model-ydf5.onrender.com/predict/${disease}`, {
         method: "POST",
@@ -372,13 +372,13 @@ const Prediction = () => {
         },
         body: JSON.stringify(predictionData), // Send data without "user_name"
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
       }
-  
+
       const result = await response.json();
-  
+
       // Display prediction results to the user
       const riskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
       setRiskPercentage(`${result.probability}%`);
@@ -389,10 +389,10 @@ const Prediction = () => {
           : "Your health condition seems fine."
       );
       setPrediction(result.probability);
-  
+
       // Step 2: Save the prediction and user data to MongoDB
       const userId = userData?._id || "guest";
-  
+
       const saveResponse = await fetch("https://predictacare-1.onrender.com/api/predictions/savePrediction", {
         method: "POST",
         headers: {
@@ -407,13 +407,13 @@ const Prediction = () => {
           probability: result.probability,
         }),
       });
-  
+
       if (!saveResponse.ok) {
         const saveError = await saveResponse.json();
         console.error("Failed to save prediction data:", saveError.message);
         throw new Error(`Failed to save prediction data: ${saveError.message}`);
       }
-  
+
       console.log("Prediction data saved successfully!");
     } catch (error) {
       console.error("Error:", error);
@@ -422,7 +422,7 @@ const Prediction = () => {
       setLoading(false);
     }
   };
-  
+
 
   const normalValues = {
     heart: {
@@ -530,7 +530,7 @@ const Prediction = () => {
       // Table Content
       doc.setFont("helvetica", "normal");
       diseaseFields[disease]
-        .filter(field => field.name !== "age" && field.name !== "gender" && field.name !== "sex" && field.name!="user_name") // Exclude age and gender
+        .filter(field => field.name !== "age" && field.name !== "gender" && field.name !== "sex" && field.name != "user_name") // Exclude age and gender
         .forEach((field) => {
           let value = formData[field.name] || "N/A";
           let normalInfo = normalValues[disease][field.name] || { normal: "--", unit: "--" };
@@ -598,7 +598,7 @@ const Prediction = () => {
       doc.save(`Prediction_${disease}_certificate.pdf`);
     };
   };
-  
+
 
 
   return (
@@ -616,6 +616,7 @@ const Prediction = () => {
                 <select
                   className="block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   onChange={(e) => setDisease(e.target.value)}
+                  value={disease}
                 >
                   <option value="">Select</option>
                   <option value="heart">Heart Disease</option>
@@ -655,16 +656,16 @@ const Prediction = () => {
                           placeholder={field.label}
                           className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         />
-
                       )}
                     </div>
                   ))}
                   <button
                     type="button"
-                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${loading
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-blue-500 hover:bg-blue-600"
-                      }`}
+                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${
+                      loading
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    }`}
                     onClick={handlePrediction}
                     disabled={loading}
                   >
@@ -726,19 +727,31 @@ const Prediction = () => {
 
               <button
                 onClick={handleDownloadCertificate}
-                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${prediction == null ? "cursor-not-allowed opacity-50" : ""
-                  }`}
-                disabled={prediction == null} // Only disable when prediction is null or undefined
+                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${
+                  prediction == null ? "cursor-not-allowed opacity-50" : ""
+                }`}
+                disabled={prediction == null}
               >
                 Download Prediction Certificate
               </button>
-              <p className="mt-6 text-gray-500 text-sm text-center">
-                {riskMessage}
-              </p>
+              <p className="mt-6 text-gray-500 text-sm text-center">{riskMessage}</p>
             </div>
           </div>
         </div>
       )}
+
+      {/* Centered AI Suggestions Button */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => navigate("/ai-suggestion")}
+          className={`py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-purple-500 hover:bg-purple-600 transition ${
+            prediction == null ? "cursor-not-allowed opacity-50" : ""
+          }`}
+          disabled={prediction == null}
+        >
+          View AI Suggestions
+        </button>
+      </div>
     </>
   );
 };
