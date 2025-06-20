@@ -34,7 +34,7 @@ const App = () => {
         <Route path='/my-appointments' element={<MyAppointments />} />
         <Route path='/appointment/:docId' element={<Appointment />} />
         <Route path='/prediction' element={<ProtectedRoute><Prediction /></ProtectedRoute>} />
-        <Route path='/ai-suggestion' element={<AiSuggestion />} />
+        <Route path='/ai-suggestions' element={<AiSuggestion />} />
       </Routes>
       <Bot />
       <Footer />

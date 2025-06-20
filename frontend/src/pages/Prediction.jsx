@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import jsPDF from "jspdf";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import logo from '../assets/logo.png';
@@ -314,8 +315,7 @@ const Preloader = () => {
 };
 
 const Prediction = () => {
-  const { userData, backendUrl } = useContext(AppContext);
-
+  const { userData } = useContext(AppContext);
   const [pageLoading, setPageLoading] = useState(true);
   const [disease, setDisease] = useState("");
   const [formData, setFormData] = useState({});
@@ -326,6 +326,8 @@ const Prediction = () => {
   );
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => setPageLoading(false), 2500);
@@ -348,7 +350,6 @@ const Prediction = () => {
       return;
     }
 
-    // Ensure all required fields are filled
     const requiredFields = diseaseFields[disease].map((field) => field.name);
     for (let field of requiredFields) {
       if (field !== "user_name" && (!formData[field] && formData[field] !== 0)) {
@@ -360,18 +361,19 @@ const Prediction = () => {
     setLoading(true);
 
     try {
-      // Exclude "user_name" from the prediction request
       const { user_name, ...predictionData } = formData;
 
-      // Step 1: Get the prediction from the backend
-      const response = await fetch(`https://prediction-model-ydf5.onrender.com/predict/${disease}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(predictionData), // Send data without "user_name"
-      });
+      const response = await fetch(
+        `https://prediction-model-ydf5.onrender.com/predict/${disease}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(predictionData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch prediction");
@@ -379,10 +381,9 @@ const Prediction = () => {
 
       const result = await response.json();
 
-      // Display prediction results to the user
-      const riskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
+      const finalRiskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
       setRiskPercentage(`${result.probability}%`);
-      setRiskLevel(riskLevel);
+      setRiskLevel(finalRiskLevel);
       setRiskMessage(
         result.risk === "YES"
           ? "Consult a doctor for further evaluation."
@@ -390,31 +391,30 @@ const Prediction = () => {
       );
       setPrediction(result.probability);
 
-      // Step 2: Save the prediction and user data to MongoDB
       const userId = userData?._id || "guest";
 
-      const saveResponse = await fetch("https://predictacare-1.onrender.com/api/predictions/savePrediction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          disease,
-          userId,
-          userInputs: formData, // Keep full form data (including name) for records
-          predictionResult: riskLevel,
-          probability: result.probability,
-        }),
-      });
+      const saveResponse = await fetch(
+        "https://predictacare-1.onrender.com/api/predictions/savePrediction",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            disease,
+            userId,
+            userInputs: formData,
+            predictionResult: finalRiskLevel,
+            probability: result.probability,
+          }),
+        }
+      );
 
       if (!saveResponse.ok) {
         const saveError = await saveResponse.json();
-        console.error("Failed to save prediction data:", saveError.message);
         throw new Error(`Failed to save prediction data: ${saveError.message}`);
       }
-
-      console.log("Prediction data saved successfully!");
     } catch (error) {
       console.error("Error:", error);
       setRiskMessage("Failed to get prediction or save data. Please try again.");
@@ -422,6 +422,24 @@ const Prediction = () => {
       setLoading(false);
     }
   };
+
+  const handleAISuggestions = () => {
+    const diseaseLabelMap = {
+      diabetes: "Diabetes",
+      pcos: "Polycystic Ovary Syndrome (PCOS)",
+      heart: "Heart Disease",
+      stroke: "Stroke",
+    };
+
+    const readableDisease = diseaseLabelMap[disease] || disease;
+
+    const prompt = `The user has been diagnosed with ${riskLevel} of ${readableDisease}. Suggest the best daily health routine, dietary plan, necessary precautions, and what type of specialist doctor they should consult. Provide your advice in a structured and user-friendly format.`;
+
+    navigate("/ai-suggestions", {
+      state: { prompt },
+    });
+  };
+
 
 
   const normalValues = {
@@ -600,7 +618,6 @@ const Prediction = () => {
   };
 
 
-
   return (
     <>
       {pageLoading ? (
@@ -696,9 +713,8 @@ const Prediction = () => {
                         paddingAngle={3}
                         dataKey="value"
                       >
-                        <Cell fill={getRiskColor(prediction)} />{" "}
-                        {/* Risk color based on percentage */}
-                        <Cell fill="#D1D5DB" /> {/* Gray for safe area */}
+                        <Cell fill={getRiskColor(prediction)} />
+                        <Cell fill="#D1D5DB" />
                       </Pie>
                       <Tooltip />
                     </PieChart>
@@ -734,16 +750,16 @@ const Prediction = () => {
               >
                 Download Prediction Certificate
               </button>
+
               <p className="mt-6 text-gray-500 text-sm text-center">{riskMessage}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Centered AI Suggestions Button */}
       <div className="flex justify-center mt-6">
         <button
-          onClick={() => navigate("/ai-suggestion")}
+          onClick={handleAISuggestions}
           className={`py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-purple-500 hover:bg-purple-600 transition ${
             prediction == null ? "cursor-not-allowed opacity-50" : ""
           }`}
