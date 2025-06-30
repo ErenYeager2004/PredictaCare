@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
@@ -8,7 +9,8 @@ const AISuggestions = () => {
   const location = useLocation();
   const { prompt } = location.state || {};
 
-  const [lines, setLines] = useState([]);
+  // const [lines, setLines] = useState([]);
+  const [markdownContent, setMarkdownContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -30,11 +32,12 @@ const AISuggestions = () => {
         const result = await model.generateContent(prompt);
         const response = await result.response.text();
 
-        const allLines = response.split("\n").filter((line) => line.trim() !== "");
-        for (let i = 0; i < allLines.length; i++) {
-          setLines((prev) => [...prev, allLines[i]]);
-          await delay(50); // simulate line-by-line effect
-        }
+        // const allLines = response.split("\n").filter((line) => line.trim() !== "");
+        // for (let i = 0; i < allLines.length; i++) {
+        //   setLines((prev) => [...prev, allLines[i]]);
+        //   await delay(50); // simulate line-by-line effect
+        // }
+        setMarkdownContent(response);
       } catch (err) {
         console.error("Gemini API Error:", err);
         setError("❌ Failed to fetch AI suggestions. Please try again later.");
@@ -88,8 +91,11 @@ const AISuggestions = () => {
         ) : error ? (
           <div className="text-red-600 text-center">{error}</div>
         ) : (
-          <div className="text-lg">
-            {lines.map((line, idx) => renderFormattedLine(line, idx))}
+          // <div className="text-lg">
+          //   {lines.map((line, idx) => renderFormattedLine(line, idx))}
+          // </div>
+          <div className="prose prose-lg max-w-none">
+            <ReactMarkdown>{markdownContent}</ReactMarkdown>
           </div>
         )}
       </div>

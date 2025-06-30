@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/Deyasin-Srijon/PredictaCare#readme",
   "dependencies": {
-    "serve": "^14.2.4",
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "react-markdown": "^10.1.0",
+    "serve": "^14.2.4"
   }
 }
