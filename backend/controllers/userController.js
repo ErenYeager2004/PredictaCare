@@ -310,18 +310,22 @@ const razorpayWebhook = async (req, res) => {
   try {
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
+    // req.body is Buffer here
+    const payload = req.body.toString();
+
     const shasum = crypto.createHmac("sha256", secret);
-    shasum.update(JSON.stringify(req.body));
+    shasum.update(payload);
     const digest = shasum.digest("hex");
 
     if (digest !== req.headers["x-razorpay-signature"]) {
       return res.status(400).json({ success: false, message: "Invalid webhook signature" });
     }
 
-    const event = req.body.event;
+    const data = JSON.parse(payload);
+    const event = data.event;
 
     if (event === "payment.captured" || event === "payment.authorized") {
-      const { order_id, id: paymentId } = req.body.payload.payment.entity;
+      const { order_id, id: paymentId } = data.payload.payment.entity;
       const order = await razorpayInstance.orders.fetch(order_id);
       const appointmentId = order?.receipt;
 

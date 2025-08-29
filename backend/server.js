@@ -15,6 +15,7 @@ import connectCloudinary from "./config/cloudinary.js";
 import adminRouter from "./routes/adminRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import userRouter from "./routes/userRoute.js";
+import { razorpayWebhook } from "./controllers/userController.js";
 import predictionRouter from "./routes/predictionRoutes.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 
@@ -31,23 +32,34 @@ connectDB();
 connectCloudinary();
 
 // ✅ Middleware
+app.post(
+  "/api/payment/webhook",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook
+);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
 app.use(helmet());
 
 // ✅ CORS
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://your-frontend.onrender.com",
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || origin.includes("onrender.com") || origin.startsWith("http://localhost")) {
-        callback(null, true);
-      } else {
-        callback(new Error("❌ CORS not allowed for this origin"));
-      }
-    },
+    origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "token", "atoken", "dtoken"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "token",
+      "atoken",
+      "dtoken",
+    ],
     credentials: true,
   })
 );
@@ -57,15 +69,28 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://checkout.razorpay.com"],
-      frameSrc: ["'self'", "https://api.razorpay.com"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+      scriptSrc: [
+        "'self'",
+        "https://checkout.razorpay.com",
+        "https://rzp.io",
+      ],
+      frameSrc: [
+        "'self'",
+        "https://api.razorpay.com",
+        "https://rzp.io",
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://res.cloudinary.com",
+      ],
       connectSrc: [
         "'self'",
+        "https://api.razorpay.com",
+        "https://lumberjack.razorpay.com",
         "https://prediction-model-ydf5.onrender.com",
         "https://predictacare-1.onrender.com",
-        "https://lumberjack.razorpay.com", // ✅ for Razorpay analytics
-        "https://generativelanguage.googleapis.com", // ✅ for Gemini API
+        "https://generativelanguage.googleapis.com",
       ],
     },
   })
@@ -113,10 +138,16 @@ app.get("/health", (req, res) => {
 
 // ✅ Serve React Frontend (User)
 app.use(express.static(path.join(__dirname, "../frontend/dist")));
-app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets")));
+app.use(
+  "/assets",
+  express.static(path.join(__dirname, "../frontend/dist/assets"))
+);
 
 // ✅ Serve React Admin Panel
-app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets")));
+app.use(
+  "/admin/assets",
+  express.static(path.join(__dirname, "../admin/dist/assets"))
+);
 app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
 
 // ✅ React Router fallback
