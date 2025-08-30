@@ -5,21 +5,16 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 const MyAppointments = () => {
-  const { backendUrl, token, getDoctorsData } = useContext(AppContext);
-  const navigate = useNavigate();
+  const { backendUrl, token, getDoctorsData } = useContext(AppContext)
 
-  const months = useMemo(
-    () => [" ", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    []
-  );
-
+  const months = [" ", "Jan", "Feb", "Mar", "Apr", "May", "jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+  const navigate = useNavigate()
   const slotDateFormat = (slotDate) => {
-    const dateArray = slotDate.split("_");
-    const m = Number(dateArray[1]);
-    return `${dateArray[0]} ${months[m]} ${dateArray[2]}`;
-  };
+    const dateArray = slotDate.split('_')
+    return dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
+  }
 
-  const [appointments, setAppointments] = useState([]);
+  const [appointments, setAppointments] = useState([])
   const [loadingRzp, setLoadingRzp] = useState(false);
 
   // --- Load Razorpay script safely ---
@@ -44,41 +39,33 @@ const MyAppointments = () => {
 
   const getUserAppointments = async () => {
     try {
-      const { data } = await axios.get(`${backendUrl}/api/user/appointments`, {
-        headers: { token },
-      });
+      const { data } = await axios.get(backendUrl + '/api/user/appointments', { headers: { token } })
       if (data.success) {
-        // newest first (also sorted at backend)
-        setAppointments((data.appointments || []).slice().reverse());
-      } else {
-        toast.error(data.message || "Failed to fetch appointments");
+        setAppointments(data.appointments.reverse())
+        console.log(data.appointments)
       }
     } catch (error) {
-      console.error(error);
-      toast.error(error?.response?.data?.message || error.message);
+      console.log(error);
+      toast.error(error.message)
     }
-  };
+  }
 
   const cancelAppointment = async (appointmentId) => {
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/cancel-appointment`,
-        { appointmentId },
-        { headers: { token } }
-      );
+      const { data } = await axios.post(backendUrl + '/api/user/cancel-appointment', { appointmentId }, { headers: { token } })
 
       if (data.success) {
-        toast.success(data.message || "Appointment cancelled");
-        getUserAppointments();
-        getDoctorsData();
+        toast.success(data.message)
+        getUserAppointments()
+        getDoctorsData()
       } else {
-        toast.error(data.message || "Unable to cancel");
+        toast.error(data.message)
       }
     } catch (error) {
-      console.error(error);
-      toast.error(error?.response?.data?.message || error.message);
+      console.log(error);
+      toast.error(error.message)
     }
-  };
+  }
 
   const openRazorpay = (order) => {
     const options = {
