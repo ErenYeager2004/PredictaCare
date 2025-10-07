@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
-import logo from '../assets/logo.png';
+import logo from "../assets/logo.png";
 import { assets } from "../assets/assets";
 
 const diseaseFields = {
@@ -102,22 +102,46 @@ const diseaseFields = {
   ],
   diabetes: [
     { name: "user_name", label: "Full Name", type: "text" },
-    { name: "gender", label: "Enter your gender ", type: "select", options: [{label: "Male", value: "Male"},{label: "Female", value: "Female" },]},
-    { name: "age", label: "Enter your age", type: "number" },
-    { name: "hypertension", label: "Do you have Hypertention ?", type: "select", options: [{label: "Yes", value: 1},{label:"No", value: 0},], },
-    { name: "heart_disease", label: "Do you have Heart Problem/Disease?", type: "select", options: [{label: "Yes", value: 1},{label:"No", value: 0},] },
     {
-  name: "smoking_history",
-  label: "Ever smoked ?",
-  type: "select",
-  options: [
-    { label: "Never", value: "never" },
-    { label: "Current", value: "current" },
-    { label: "Past", value: "past" },
-    { label: "Former", value: "former" },
-    { label: "Not Current", value: "not current" },
-  ]
-},
+      name: "gender",
+      label: "Enter your gender",
+      type: "select",
+      options: [
+        { label: "Male", value: 1 },
+        { label: "Female", value: 0 },
+      ],
+    },
+    { name: "age", label: "Enter your age", type: "number" },
+    {
+      name: "hypertension",
+      label: "Do you have Hypertention ?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "heart_disease",
+      label: "Do you have Heart Problem/Disease?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "smoking_history",
+      label: "Ever smoked ?",
+      type: "select",
+      options: [
+        { label: "Never", value: 0 },
+        { label: "Current", value: 1 },
+        { label: "Past", value: 2 },
+        { label: "Former", value: 3 },
+        { label: "Not Current", value: 4 },
+      ],
+    },
     { name: "bmi", label: "Enter your BMI ", type: "number" },
     { name: "hba1c", label: "Enter your Hba1c level", type: "number" },
     { name: "glucose", label: "Enter your glucose level", type: "number" },
@@ -130,7 +154,11 @@ const diseaseFields = {
     { name: "LH(mIU/mL)", label: "LH (mIU/mL)", type: "number" },
     { name: "FSH(mIU/mL)", label: "FSH (mIU/mL)", type: "number" },
     { name: "FSH/LH", label: "FSH/LH Ratio", type: "number" },
-    { name: "Cycle length(days)", label: "Cycle Length (days)", type: "number" },
+    {
+      name: "Cycle length(days)",
+      label: "Cycle Length (days)",
+      type: "number",
+    },
     {
       name: "Cycle(R/I)",
       label: "Cycle Regularity",
@@ -187,10 +215,22 @@ const diseaseFields = {
     },
     { name: "Follicle No. (L)", label: "Follicle No. (Left)", type: "number" },
     { name: "Follicle No. (R)", label: "Follicle No. (Right)", type: "number" },
-    { name: "Avg. F size (L) (mm)", label: "Follicle Size (Left) (mm)", type: "number" },
-    { name: "Avg. F size (R) (mm)", label: "Follicle Size (Right) (mm)", type: "number" },
+    {
+      name: "Avg. F size (L) (mm)",
+      label: "Follicle Size (Left) (mm)",
+      type: "number",
+    },
+    {
+      name: "Avg. F size (R) (mm)",
+      label: "Follicle Size (Right) (mm)",
+      type: "number",
+    },
     { name: "TSH (mIU/L)", label: "TSH (mIU/L)", type: "number" },
-    { name: "Endometrium (mm)", label: "Endometrium Thickness (mm)", type: "number" },
+    {
+      name: "Endometrium (mm)",
+      label: "Endometrium Thickness (mm)",
+      type: "number",
+    },
     { name: "PRL(ng/mL)", label: "Prolactin (ng/mL)", type: "number" },
   ],
 
@@ -313,12 +353,22 @@ const Preloader = () => {
         <motion.div
           className="w-2 h-2 bg-blue-600 rounded-full"
           animate={{ y: [-5, 5, -5] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+          transition={{
+            duration: 0.8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.2,
+          }}
         />
         <motion.div
           className="w-2 h-2 bg-blue-600 rounded-full"
           animate={{ y: [-5, 5, -5] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+          transition={{
+            duration: 0.8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.4,
+          }}
         />
       </div>
     </div>
@@ -363,7 +413,7 @@ const Prediction = () => {
 
     const requiredFields = diseaseFields[disease].map((field) => field.name);
     for (let field of requiredFields) {
-      if (field !== "user_name" && (!formData[field] && formData[field] !== 0)) {
+      if (field !== "user_name" && !formData[field] && formData[field] !== 0) {
         alert(`Please fill the field: ${field}`);
         return;
       }
@@ -428,7 +478,9 @@ const Prediction = () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      setRiskMessage("Failed to get prediction or save data. Please try again.");
+      setRiskMessage(
+        "Failed to get prediction or save data. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -450,8 +502,6 @@ const Prediction = () => {
       state: { prompt },
     });
   };
-
-
 
   const normalValues = {
     heart: {
@@ -516,7 +566,9 @@ const Prediction = () => {
       // Disease Name (Centered)
       doc.setFontSize(12);
       doc.setTextColor(60, 60, 60);
-      doc.text(`Disease: ${disease.toUpperCase()}`, 105, 48, { align: "center" });
+      doc.text(`Disease: ${disease.toUpperCase()}`, 105, 48, {
+        align: "center",
+      });
 
       doc.line(15, 50, 195, 50);
 
@@ -530,11 +582,11 @@ const Prediction = () => {
 
       doc.setFontSize(13);
       doc.setFont("helvetica", "semi-bold");
-      const patientName = formData["user_name"] || "N/A"
+      const patientName = formData["user_name"] || "N/A";
       doc.text(`Patient Name: ${patientName}`, 15, 57);
       const patientAge = formData["age"] || "N/A"; // Get age from formData
       doc.text(`Age: ${patientAge}`, 15, 62);
-      const patientSex = formData["gender"] || "N/A"
+      const patientSex = formData["gender"] || "N/A";
       doc.text(`Sex: ${patientSex}`, 15, 67);
 
       doc.line(15, 70, 195, 70);
@@ -559,15 +611,26 @@ const Prediction = () => {
       // Table Content
       doc.setFont("helvetica", "normal");
       diseaseFields[disease]
-        .filter(field => field.name !== "age" && field.name !== "gender" && field.name !== "sex" && field.name != "user_name") // Exclude age and gender
+        .filter(
+          (field) =>
+            field.name !== "age" &&
+            field.name !== "gender" &&
+            field.name !== "sex" &&
+            field.name != "user_name"
+        ) // Exclude age and gender
         .forEach((field) => {
           let value = formData[field.name] || "N/A";
-          let normalInfo = normalValues[disease][field.name] || { normal: "--", unit: "--" };
+          let normalInfo = normalValues[disease][field.name] || {
+            normal: "--",
+            unit: "--",
+          };
           let normalValue = normalInfo.normal;
           let unit = normalInfo.unit;
 
           if (field.type === "select") {
-            const selectedOption = field.options.find((opt) => opt.value == value);
+            const selectedOption = field.options.find(
+              (opt) => opt.value == value
+            );
             value = selectedOption ? selectedOption.label : value;
           }
           doc.text(field.label, 20, yPos);
@@ -592,7 +655,9 @@ const Prediction = () => {
       doc.setFillColor(230, 230, 230); // Light gray background for header
       doc.rect(tableX, tableY, tableWidth, rowHeight, "F");
       doc.setTextColor(0, 0, 0);
-      doc.text("Prediction Result", tableX + tableWidth / 2, tableY + 7, { align: "center" });
+      doc.text("Prediction Result", tableX + tableWidth / 2, tableY + 7, {
+        align: "center",
+      });
 
       // Table Border
       doc.rect(tableX, tableY, tableWidth, rowHeight * 3);
@@ -627,7 +692,6 @@ const Prediction = () => {
       doc.save(`Prediction_${disease}_certificate.pdf`);
     };
   };
-
 
   return (
     <>
@@ -762,7 +826,9 @@ const Prediction = () => {
                 Download Prediction Certificate
               </button>
 
-              <p className="mt-6 text-gray-500 text-sm text-center">{riskMessage}</p>
+              <p className="mt-6 text-gray-500 text-sm text-center">
+                {riskMessage}
+              </p>
             </div>
           </div>
         </div>
