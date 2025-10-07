@@ -102,14 +102,25 @@ const diseaseFields = {
   ],
   diabetes: [
     { name: "user_name", label: "Full Name", type: "text" },
-    { name: "pregnancies", label: "Number of Pregnancies", type: "number" },
-    { name: "glucose", label: "Glucose Level", type: "number" },
-    { name: "blood_pressure", label: "Blood Pressure", type: "number" },
-    { name: "skin_thickness", label: "Skin Thickness", type: "number" },
-    { name: "insulin", label: "Insulin Level", type: "number" },
-    { name: "bmi", label: "BMI", type: "number" },
-    { name: "dpf", label: "Diabetes Pedigree Function", type: "number" },
-    { name: "age", label: "Age", type: "number" },
+    { name: "gender", label: "Enter your gender ", type: "select", options: [{label: "Male", value: "Male"},{label: "Female", value: "Female" },]},
+    { name: "age", label: "Enter your age", type: "number" },
+    { name: "hypertension", label: "Do you have Hypertention ?", type: "select", options: [{label: "Yes", value: 1},{label:"No", value: 0},], },
+    { name: "heart_disease", label: "Do you have Heart Problem/Disease?", type: "select", options: [{label: "Yes", value: 1},{label:"No", value: 0},] },
+    {
+  name: "smoking_history",
+  label: "Ever smoked ?",
+  type: "select",
+  options: [
+    { label: "Never", value: "never" },
+    { label: "Current", value: "current" },
+    { label: "Past", value: "past" },
+    { label: "Former", value: "former" },
+    { label: "Not Current", value: "not current" },
+  ]
+},
+    { name: "bmi", label: "Enter your BMI ", type: "number" },
+    { name: "hba1c", label: "Enter your Hba1c level", type: "number" },
+    { name: "glucose", label: "Enter your glucose level", type: "number" },
   ],
   pcos: [
     { name: "user_name", label: "Full Name", type: "text" },
@@ -623,7 +634,7 @@ const Prediction = () => {
       {pageLoading ? (
         <Preloader />
       ) : (
-        <div className="mt-15 flex flex-col items-center p-6">
+        <div className="mt-15 flex flex-col items-center p-8">
           <div className="flex flex-col md:flex-row gap-8 max-w-7xl w-full bg-white rounded-3xl shadow-2xl p-10">
             <div className="w-full md:w-1/2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 [&::-webkit-scrollbar]:hidden">
               <div className="mb-6">
