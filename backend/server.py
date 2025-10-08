@@ -47,7 +47,7 @@ LOGISTIC_SCALER_FILES = {
 
 DISEASE_FIELDS = {
     "heart": ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal"],
-    "diabetes": ["pregnancies", "glucose", "blood_pressure", "skin_thickness", "insulin", "bmi", "dpf", "age"],
+    "diabetes": ["gender", "age", "hypertension", "heart_disease", "smoking_history", "bmi", "hba1c", "glucose"],
     "stroke": ["gender", "age", "hypertension", "heart_disease", "ever_married", "work_type", "residence_type", "avg_glucose_level", "bmi", "smoking_status"],
     "pcos": [
         'Age (yrs)', 'BMI', 'AMH(ng/mL)', 'LH(mIU/mL)', 'FSH(mIU/mL)', 'FSH/LH',
@@ -132,7 +132,7 @@ def predict(disease):
     except Exception as e:
         print(f"Server Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
-    
+
 @app.route("/predict_logistic/<disease>", methods=["POST", "OPTIONS"])
 def predict_logistic(disease):
     if request.method == "OPTIONS":
