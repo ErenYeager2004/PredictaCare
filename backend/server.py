@@ -7,19 +7,21 @@ import joblib
 
 app = Flask(__name__)
 
-# Allow only specific origins (your frontend/backend)
-CORS(app, resources={r"/predict/*": {
-    "origins": [
-        "https://predictacare-1.onrender.com",  # Your MERN frontend/backend
-        "http://localhost:5173/"         # Optional: If frontend hosted separately
-    ]
-}}, supports_credentials=True)
+# ✅ Correct CORS: Allow only your frontend and optional localhost for testing
+CORS(app, resources={
+    r"/predict/*": {
+        "origins": [
+            "https://predictacare-1.onrender.com",
+            "http://localhost:5173"  # optional for local testing
+        ]
+    }
+})
 
 # Paths to models and scalers
 MODEL_DIR = "predictionModel/models/"
 SCALER_DIR = "predictionModel/scalers/"
-LOGISTIC_MODEL_DIR ="Logistic_PredictionModels/models/"
-LOGISTIC_SCALER_DIR ="Logistic_PredictionModels/scalers/"
+LOGISTIC_MODEL_DIR = "Logistic_PredictionModels/models/"
+LOGISTIC_SCALER_DIR = "Logistic_PredictionModels/scalers/"
 
 MODEL_FILES = {
     "heart": "heart_disease_model_v2.h5",
@@ -35,14 +37,14 @@ SCALER_FILES = {
     "pcos": "pcos_scalerv5.pkl"
 }
 
-LOGISTIC_MODEL_FILES ={
+LOGISTIC_MODEL_FILES = {
     "heart": "logreg_heart_calibrated.pkl",
     "diabetes": "logreg_diabetes_model.pkl"
 }
 
 LOGISTIC_SCALER_FILES = {
-    "heart":"heart_scaler.pkl",
-    "diabetes" : "diabetes_scaler.pkl"
+    "heart": "heart_scaler.pkl",
+    "diabetes": "diabetes_scaler.pkl"
 }
 
 DISEASE_FIELDS = {
@@ -61,9 +63,8 @@ DISEASE_FIELDS = {
 # Load models and scalers
 models = {}
 scalers = {}
-
 logistic_models = {}
-logistic_scalers ={}
+logistic_scalers = {}
 
 for disease, model_file in MODEL_FILES.items():
     model_path = os.path.join(MODEL_DIR, model_file)
@@ -76,7 +77,7 @@ for disease, model_file in MODEL_FILES.items():
     else:
         print(f"❌ Model or scaler missing for {disease}")
 
-# 🆕 Load logistic models and scalers
+# Load logistic models and scalers
 for disease, model_file in LOGISTIC_MODEL_FILES.items():
     model_path = os.path.join(LOGISTIC_MODEL_DIR, model_file)
     scaler_path = os.path.join(LOGISTIC_SCALER_DIR, LOGISTIC_SCALER_FILES[disease])
@@ -88,12 +89,7 @@ for disease, model_file in LOGISTIC_MODEL_FILES.items():
     else:
         print(f"❌ Logistic model or scaler missing for {disease}")
 
-@app.after_request
-def apply_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-    return response
+# ------------------ Prediction Routes ------------------
 
 @app.route("/predict/<disease>", methods=["POST", "OPTIONS"])
 def predict(disease):
@@ -158,7 +154,7 @@ def predict_logistic(disease):
         input_data = np.array([features])
         input_scaled = logistic_scalers[disease].transform(input_data)
 
-        prediction_prob = logistic_models[disease].predict_proba(input_scaled)[0][1]  # probability for class 1
+        prediction_prob = logistic_models[disease].predict_proba(input_scaled)[0][1]
         prediction = "YES" if prediction_prob > 0.5 else "NO"
 
         return jsonify({
@@ -171,6 +167,7 @@ def predict_logistic(disease):
         print(f"Server Error (Logistic): {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+# ------------------ Run Server ------------------
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
