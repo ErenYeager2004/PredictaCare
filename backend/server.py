@@ -18,7 +18,7 @@ CORS(app, resources={
 })
 
 # Paths to models and scalers
-MODEL_DIR = "predictionModel/models/"
+MODEL_DIR = "predictionModel/h5Model/"
 SCALER_DIR = "predictionModel/scalers/"
 LOGISTIC_MODEL_DIR = "Logistic_PredictionModels/models/"
 LOGISTIC_SCALER_DIR = "Logistic_PredictionModels/scalers/"
