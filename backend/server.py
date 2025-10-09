@@ -162,7 +162,6 @@ def predict_logistic(disease):
             "risk": prediction,
             "probability": round(float(prediction_prob) * 100, 2)
         }), 200
-
     except Exception as e:
         print(f"Server Error (Logistic): {str(e)}")
         return jsonify({"error": str(e)}), 500
