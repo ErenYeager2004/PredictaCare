@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from tensorflow.keras.models import load_model
@@ -7,17 +8,17 @@ import joblib
 
 app = Flask(__name__)
 
-# ✅ Correct CORS: Allow only your frontend and optional localhost for testing
+# ------------------- CORS -------------------
 CORS(app, resources={
     r"/predict/*": {
         "origins": [
             "https://predictacare-1.onrender.com",
-            "http://localhost:5173"  # optional for local testing
+            "http://localhost:5173"
         ]
     }
 })
 
-# Paths to models and scalers
+# ------------------- Paths -------------------
 MODEL_DIR = "predictionModel/h5Model/"
 SCALER_DIR = "predictionModel/scalers/"
 LOGISTIC_MODEL_DIR = "Logistic_PredictionModels/models/"
@@ -48,9 +49,12 @@ LOGISTIC_SCALER_FILES = {
 }
 
 DISEASE_FIELDS = {
-    "heart": ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal"],
-    "diabetes": ["gender", "age", "hypertension", "heart_disease", "smoking_history", "bmi", "hba1c", "glucose"],
-    "stroke": ["gender", "age", "hypertension", "heart_disease", "ever_married", "work_type", "residence_type", "avg_glucose_level", "bmi", "smoking_status"],
+    "heart": ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
+              "thalach", "exang", "oldpeak", "slope", "ca", "thal"],
+    "diabetes": ["age", "hypertension", "heart_disease", "bmi",
+                 "HbA1c_level", "blood_glucose_level", "gender", "smoking_history"],
+    "stroke": ["gender", "age", "hypertension", "heart_disease", "ever_married",
+               "work_type", "residence_type", "avg_glucose_level", "bmi", "smoking_status"],
     "pcos": [
         'Age (yrs)', 'BMI', 'AMH(ng/mL)', 'LH(mIU/mL)', 'FSH(mIU/mL)', 'FSH/LH',
         'Cycle length(days)', 'Cycle(R/I)', 'Weight gain(Y/N)', 'hair growth(Y/N)',
@@ -60,16 +64,16 @@ DISEASE_FIELDS = {
     ]
 }
 
-# Load models and scalers
+# ------------------- Load models & scalers -------------------
 models = {}
 scalers = {}
 logistic_models = {}
 logistic_scalers = {}
 
+# Load Keras models and scalers
 for disease, model_file in MODEL_FILES.items():
     model_path = os.path.join(MODEL_DIR, model_file)
     scaler_path = os.path.join(SCALER_DIR, SCALER_FILES[disease])
-
     if os.path.exists(model_path) and os.path.exists(scaler_path):
         models[disease] = load_model(model_path)
         scalers[disease] = joblib.load(scaler_path)
@@ -81,7 +85,6 @@ for disease, model_file in MODEL_FILES.items():
 for disease, model_file in LOGISTIC_MODEL_FILES.items():
     model_path = os.path.join(LOGISTIC_MODEL_DIR, model_file)
     scaler_path = os.path.join(LOGISTIC_SCALER_DIR, LOGISTIC_SCALER_FILES[disease])
-
     if os.path.exists(model_path) and os.path.exists(scaler_path):
         logistic_models[disease] = joblib.load(model_path)
         logistic_scalers[disease] = joblib.load(scaler_path)
@@ -89,35 +92,52 @@ for disease, model_file in LOGISTIC_MODEL_FILES.items():
     else:
         print(f"❌ Logistic model or scaler missing for {disease}")
 
-# ------------------ Prediction Routes ------------------
-
+# ------------------- Prediction Route -------------------
 @app.route("/predict/<disease>", methods=["POST", "OPTIONS"])
 def predict(disease):
     if request.method == "OPTIONS":
         return "", 204
-
     try:
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data received"}), 400
-
         if disease not in models:
             return jsonify({"error": "Invalid disease type"}), 400
 
-        missing_fields = [field for field in DISEASE_FIELDS[disease] if field not in data]
-        if missing_fields:
-            return jsonify({"error": f"Missing input fields: {', '.join(missing_fields)}"}), 400
+        # ---------------- Diabetes Handling ----------------
+        if disease == "diabetes":
+            diabetes_columns_path = os.path.join(SCALER_DIR, "diabetes_columns.pkl")
+            if not os.path.exists(diabetes_columns_path):
+                return jsonify({"error": "diabetes_columns.pkl not found"}), 500
 
-        try:
+            diabetes_columns = joblib.load(diabetes_columns_path)
+
+            # Required raw fields
+            required_fields = ["age", "hypertension", "heart_disease", "bmi",
+                               "HbA1c_level", "blood_glucose_level", "gender", "smoking_history"]
+            missing_fields = [f for f in required_fields if f not in data]
+            if missing_fields:
+                return jsonify({"error": f"Missing input fields: {', '.join(missing_fields)}"}), 400
+
+            # One-hot encode and align with scaler
+            user_df = pd.DataFrame([data])
+            user_df = pd.get_dummies(user_df, columns=["gender", "smoking_history"])
+            for col in diabetes_columns:
+                if col not in user_df.columns:
+                    user_df[col] = 0
+            user_df = user_df[diabetes_columns]
+            input_scaled = scalers[disease].transform(user_df)
+
+        else:
+            missing_fields = [field for field in DISEASE_FIELDS[disease] if field not in data]
+            if missing_fields:
+                return jsonify({"error": f"Missing input fields: {', '.join(missing_fields)}"}), 400
             features = [float(data[field]) for field in DISEASE_FIELDS[disease]]
-        except ValueError:
-            return jsonify({"error": "Invalid input: All values must be numeric"}), 400
-
-        input_data = np.array([features])
-        input_scaled = scalers[disease].transform(input_data)
+            input_scaled = scalers[disease].transform(np.array([features]))
 
         prediction_prob = models[disease].predict(input_scaled)[0][0]
-        prediction = "YES" if prediction_prob > 0.5 else "NO"
+        prediction = "HIGH ⚠️⚠️" if prediction_prob > 0.8 else \
+                     "MODERATE ⚠️" if prediction_prob > 0.5 else "LOW ✅"
 
         return jsonify({
             "disease": disease,
@@ -129,45 +149,60 @@ def predict(disease):
         print(f"Server Error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+# ------------------- Logistic Prediction Route -------------------
 @app.route("/predict_logistic/<disease>", methods=["POST", "OPTIONS"])
 def predict_logistic(disease):
     if request.method == "OPTIONS":
         return "", 204
-
     try:
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data received"}), 400
-
         if disease not in logistic_models:
             return jsonify({"error": "Invalid disease type for logistic prediction"}), 400
 
-        missing_fields = [field for field in DISEASE_FIELDS[disease] if field not in data]
-        if missing_fields:
-            return jsonify({"error": f"Missing input fields: {', '.join(missing_fields)}"}), 400
+        if disease == "diabetes":
+            diabetes_columns_path = os.path.join(LOGISTIC_SCALER_DIR, "diabetes_columns.pkl")
+            if not os.path.exists(diabetes_columns_path):
+                return jsonify({"error": "diabetes_columns.pkl not found"}), 500
 
-        try:
+            diabetes_columns = joblib.load(diabetes_columns_path)
+            required_fields = ["age", "hypertension", "heart_disease", "bmi",
+                               "HbA1c_level", "blood_glucose_level", "gender", "smoking_history"]
+            missing_fields = [f for f in required_fields if f not in data]
+            if missing_fields:
+                return jsonify({"error": f"Missing input fields: {', '.join(missing_fields)}"}), 400
+
+            user_df = pd.DataFrame([data])
+            user_df = pd.get_dummies(user_df, columns=["gender", "smoking_history"])
+            for col in diabetes_columns:
+                if col not in user_df.columns:
+                    user_df[col] = 0
+            user_df = user_df[diabetes_columns]
+            input_scaled = logistic_scalers[disease].transform(user_df)
+
+        else:
+            missing_fields = [field for field in DISEASE_FIELDS[disease] if field not in data]
+            if missing_fields:
+                return jsonify({"error": f"Missing input fields: {', '.join(missing_fields)}"}), 400
             features = [float(data[field]) for field in DISEASE_FIELDS[disease]]
-        except ValueError:
-            return jsonify({"error": "Invalid input: All values must be numeric"}), 400
-
-        input_data = np.array([features])
-        input_scaled = logistic_scalers[disease].transform(input_data)
+            input_scaled = logistic_scalers[disease].transform(np.array([features]))
 
         prediction_prob = logistic_models[disease].predict_proba(input_scaled)[0][1]
-        prediction = "YES" if prediction_prob > 0.5 else "NO"
+        prediction = "HIGH ⚠️⚠️" if prediction_prob > 0.8 else \
+                     "MODERATE ⚠️" if prediction_prob > 0.5 else "LOW ✅"
 
         return jsonify({
             "disease": disease,
             "risk": prediction,
             "probability": round(float(prediction_prob) * 100, 2)
         }), 200
+
     except Exception as e:
         print(f"Server Error (Logistic): {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-# ------------------ Run Server ------------------
-
+# ------------------- Run Server -------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)

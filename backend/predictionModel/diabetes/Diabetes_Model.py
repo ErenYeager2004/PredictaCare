@@ -17,56 +17,66 @@ from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
-import matplotlib.pyplot as plt
 
-# Set seeds
+# -------------------- Seeds --------------------
 np.random.seed(42)
 random.seed(42)
 tf.random.set_seed(42)
 
-# Load CSV
-df = pd.read_csv("diabetes_prediction_dataset.csv")
+# -------------------- Paths --------------------
+DATA_PATH = "diabetes_prediction_dataset.csv"
+MODEL_PATH = "diabetes_model.h5"
+SCALER_PATH = "diabetes_scaler.pkl"
+COLUMNS_PATH = "diabetes_columns.pkl"
+PROCESSED_DATA_PATH = "processed_data.npz"
 
-# Drop target column from features
+# -------------------- Load Dataset --------------------
+df = pd.read_csv(DATA_PATH)
+
+# Separate features and target
 X = df.drop('diabetes', axis=1)
 y = df['diabetes']
 
-# One-hot encode categorical features
+# One-hot encode categorical columns
 X = pd.get_dummies(X, columns=['gender', 'smoking_history'])
 
+# Save column order for backend
+joblib.dump(list(X.columns), COLUMNS_PATH)
+print(f"✅ Saved diabetes columns to {COLUMNS_PATH}")
+
 # Scale numeric features
-scaler_path = "diabetes_scaler.pkl"
-if os.path.exists(scaler_path):
-    scaler = joblib.load(scaler_path)
+if os.path.exists(SCALER_PATH):
+    scaler = joblib.load(SCALER_PATH)
 else:
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X)
-    joblib.dump(scaler, scaler_path)
+    joblib.dump(scaler, SCALER_PATH)
+    print(f"✅ Saved MinMaxScaler to {SCALER_PATH}")
 
 X_scaled = scaler.transform(X)
 
-# Resample to handle class imbalance
-data_path = "processed_data.npz"
-if os.path.exists(data_path):
-    loaded_data = np.load(data_path)
-    X_final, y_final = loaded_data['X_final'], loaded_data['y_final']
+# -------------------- Handle Class Imbalance --------------------
+if os.path.exists(PROCESSED_DATA_PATH):
+    loaded = np.load(PROCESSED_DATA_PATH)
+    X_final, y_final = loaded['X_final'], loaded['y_final']
 else:
+    # Undersample majority class
     rus = RandomUnderSampler(random_state=42)
     X_resampled, y_resampled = rus.fit_resample(X_scaled, y)
+    # SMOTETomek for balance
     smt = SMOTETomek(random_state=42)
     X_final, y_final = smt.fit_resample(X_resampled, y_resampled)
-    np.savez(data_path, X_final=X_final, y_final=y_final)
+    np.savez(PROCESSED_DATA_PATH, X_final=X_final, y_final=y_final)
+    print(f"✅ Saved processed data to {PROCESSED_DATA_PATH}")
 
-# Train-Test Split
+# -------------------- Train-Test Split --------------------
 X_train, X_test, y_train, y_test = train_test_split(X_final, y_final, test_size=0.2, random_state=42)
 
-# Model path
-model_path = "diabetes_model.h5"
-
-if os.path.exists(model_path):
-    model = load_model(model_path)
+# -------------------- Build or Load Model --------------------
+if os.path.exists(MODEL_PATH):
+    model = load_model(MODEL_PATH)
+    print(f"✅ Loaded existing model from {MODEL_PATH}")
 else:
-    # Neural Network
     model = Sequential([
         Dense(256, activation='relu', kernel_regularizer=l2(0.001), input_shape=(X_train.shape[1],)),
         BatchNormalization(),
@@ -79,11 +89,11 @@ else:
     ])
 
     model.compile(optimizer=Adam(learning_rate=0.0005), loss='binary_crossentropy', metrics=['accuracy'])
-
     history = model.fit(X_train, y_train, epochs=150, batch_size=32, validation_data=(X_test, y_test))
-    model.save(model_path)
+    model.save(MODEL_PATH)
+    print(f"✅ Model trained and saved to {MODEL_PATH}")
 
-# Predictions
+# -------------------- Evaluate --------------------
 y_pred_probs = model.predict(X_test, verbose=0)
 y_pred = (y_pred_probs > 0.5).astype("int32")
 
@@ -101,13 +111,12 @@ for t in thresholds:
 print(f"Optimal threshold (F1-based): {best_threshold:.2f}")
 y_pred = (y_pred_probs > best_threshold).astype("int32")
 
-# Evaluation
 print("Classification Report:\n", classification_report(y_test, y_pred))
 print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
 print(f"Test Accuracy: {accuracy:.4f}")
 
-# User Input Prediction Function
+# -------------------- User Input Prediction --------------------
 def get_user_input():
     print("\nEnter health details to predict Diabetes Risk:")
     gender = input("Gender (Male/Female): ")
@@ -119,7 +128,6 @@ def get_user_input():
     hba1c = float(input("HbA1c Level: "))
     glucose = float(input("Blood Glucose Level: "))
 
-    # Create dataframe
     user_df = pd.DataFrame([{
         'age': age,
         'hypertension': hypertension,
@@ -131,21 +139,18 @@ def get_user_input():
         'smoking_history': smoking_history
     }])
 
-    # One-hot encode like training
     user_df = pd.get_dummies(user_df)
-    # Add missing columns (if user didn’t enter some categories)
     for col in X.columns:
         if col not in user_df.columns:
             user_df[col] = 0
-    user_df = user_df[X.columns]  # Ensure same column order
+    user_df = user_df[X.columns]
     return user_df
 
-# Get user input
+# Test prediction
 user_input = get_user_input()
 user_input_scaled = scaler.transform(user_input)
 prediction_prob = model.predict(user_input_scaled, verbose=0)[0][0]
 
-# Categorized output
 if prediction_prob > 0.8:
     prediction = "Diabetes Risk: HIGH ⚠️⚠️"
 elif prediction_prob > 0.5:
