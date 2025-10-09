@@ -114,7 +114,7 @@ const diseaseFields = {
     { name: "age", label: "Enter your age", type: "number" },
     {
       name: "hypertension",
-      label: "Do you have Hypertention ?",
+      label: "Do you have Hypertension?",
       type: "select",
       options: [
         { label: "Yes", value: 1 },
@@ -132,20 +132,25 @@ const diseaseFields = {
     },
     {
       name: "smoking_history",
-      label: "Ever smoked ?",
+      label: "Ever smoked?",
       type: "select",
       options: [
-        { label: "Never", value: 0 },
-        { label: "Current", value: 1 },
-        { label: "Past", value: 2 },
-        { label: "Former", value: 3 },
-        { label: "Not Current", value: 4 },
+        { label: "Never", value: "never" },
+        { label: "Current", value: "current" },
+        { label: "Past", value: "past" },
+        { label: "Former", value: "former" },
+        { label: "Not Current", value: "not current" },
       ],
     },
-    { name: "bmi", label: "Enter your BMI ", type: "number" },
-    { name: "hba1c", label: "Enter your Hba1c level", type: "number" },
-    { name: "glucose", label: "Enter your glucose level", type: "number" },
+    { name: "bmi", label: "Enter your BMI", type: "number" },
+    { name: "HbA1c_level", label: "Enter your Hba1c level", type: "number" }, // <-- renamed
+    {
+      name: "blood_glucose_level",
+      label: "Enter your glucose level",
+      type: "number",
+    }, // <-- renamed
   ],
+
   pcos: [
     { name: "user_name", label: "Full Name", type: "text" },
     { name: "Age (yrs)", label: "Age (in years)", type: "number" },
