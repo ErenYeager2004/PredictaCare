@@ -27,7 +27,7 @@ LOGISTIC_SCALER_DIR = "Logistic_PredictionModels/scalers/"
 MODEL_FILES = {
     "heart": "heart_disease_model_v2.h5",
     "diabetes": "diabetes_model.h5",
-    "stroke": "stroke_model.h5",
+    "stroke": "stroke_model_classweight.h5",
     "pcos": "pcos_modelV2.h5"
 }
 
@@ -53,8 +53,9 @@ DISEASE_FIELDS = {
               "thalach", "exang", "oldpeak", "slope", "ca", "thal"],
     "diabetes": ["age", "hypertension", "heart_disease", "bmi",
                  "HbA1c_level", "blood_glucose_level", "gender", "smoking_history"],
-    "stroke": ["gender", "age", "hypertension", "heart_disease", "ever_married",
-               "work_type", "residence_type", "avg_glucose_level", "bmi", "smoking_status"],
+    "stroke": ["Chest Pain", "Shortness of Breath",
+               "Irregular Heartbeat", "Fatigue & Weakness", "Dizziness", "Swelling (Edema)", "Excessive Sweating", "Persistent Cough",
+               "Nausea/Vomiting", "High Blood Pressure", "Chest Discomfort (Activity)", "Cold Hands/Feet", "Anxiety/Feeling of Doom", "Age"],
     "pcos": [
         'Age (yrs)', 'BMI', 'AMH(ng/mL)', 'LH(mIU/mL)', 'FSH(mIU/mL)', 'FSH/LH',
         'Cycle length(days)', 'Cycle(R/I)', 'Weight gain(Y/N)', 'hair growth(Y/N)',
