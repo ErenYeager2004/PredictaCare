@@ -242,80 +242,121 @@ const diseaseFields = {
   stroke: [
     { name: "user_name", label: "Full Name", type: "text" },
     {
-      name: "gender",
-      label: "Gender",
+      name: "Chest Pain",
+      label: "Have you experienced chest pain?",
       type: "select",
       options: [
-        { label: "Female", value: 0 },
-        { label: "Male", value: 1 },
-      ],
-    },
-    { name: "age", label: "Age (in years)", type: "number" },
-    {
-      name: "hypertension",
-      label: "Hypertension",
-      type: "select",
-      options: [
-        { label: "No", value: 0 },
         { label: "Yes", value: 1 },
-      ],
-    },
-    {
-      name: "heart_disease",
-      label: "Heart Disease",
-      type: "select",
-      options: [
         { label: "No", value: 0 },
-        { label: "Yes", value: 1 },
       ],
     },
-    {
-      name: "ever_married",
-      label: "Ever Married",
+    { name: "Shortness of Breath",
+      label: "Do you experience shortness of breath?",
       type: "select",
       options: [
+        { label: "Yes", value: 1 },
         { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "Irregular Heartbeat",
+      label: "Have you been experiencing an irregular heartbeat?",
+      type: "select",
+      options: [
         { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
       ],
     },
     {
-      name: "work_type",
-      label: "Work Type",
+      name: "Fatigue & Weakness",
+      label: "Do you often feel unusually tired or lacking in energy?",
       type: "select",
       options: [
-        { label: "Private", value: 0 },
-        { label: "Self-employed", value: 1 },
-        { label: "Govt job", value: 2 },
-        { label: "Children", value: 3 },
-        { label: "Never worked", value: 4 },
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
       ],
     },
     {
-      name: "residence_type",
-      label: "Residence Type",
+      name: "Dizziness",
+      label: "Have you experienced any episodes of dizziness or light-headedness recently?",
       type: "select",
       options: [
-        { label: "Rural", value: 0 },
-        { label: "Urban", value: 1 },
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
       ],
     },
     {
-      name: "avg_glucose_level",
-      label: "Average Glucose Level",
-      type: "number",
-    },
-    { name: "bmi", label: "BMI", type: "number" },
-    {
-      name: "smoking_status",
-      label: "Smoking Status",
+      name: "Swelling (Edema)",
+      label: "Are you experiencing any swelling or puffiness in your limbs or face?",
       type: "select",
       options: [
-        { label: "Never smoked", value: 0 },
-        { label: "Formerly smoked", value: 1 },
-        { label: "Smokes", value: 2 },
-        { label: "Unknown", value: 3 },
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
       ],
     },
+    {
+      name: "Excessive Sweating",
+      label: "Have you been experiencing excessive sweating?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "Persistent Cough",
+      label: "Are you experiencing a persistent or long-lasting cough?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    { name: "Nausea/Vomiting",
+      label: "Have you been feeling nauseous or throwing up often?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "High Blood Pressure",
+      label: "Have you ever been diagnosed with high blood pressure?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "Chest Discomfort (Activity)",
+      label: "Do you experience any chest pain or discomfort during physical activity or exertion?",
+      type: "select",
+      options: [
+        {label: "Yes", value: 1},
+        {label: "No", value: 0},
+      ],
+    },
+    {
+      name: "Cold Hands/Feet",
+      label: "Have you noticed that your hands or feet often feel unusually cold?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {
+      name: "Anxiety/Feeling of Doom",
+      label: "Have you been feeling unusually anxious or tense lately?",
+      type: "select",
+      options: [
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
+      ],
+    },
+    {name: "Age", label: "Enter your age", type: "number"},
   ],
 };
 
