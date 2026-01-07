@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
+import Groq from "groq-sdk";
 import axios from "axios";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -31,13 +32,14 @@ const __dirname = path.dirname(__filename);
 connectDB();
 connectCloudinary();
 
-// ✅ Middleware
+// ✅ Razorpay webhook (raw body required)
 app.post(
   "/api/payment/webhook",
   express.raw({ type: "application/json" }),
   razorpayWebhook
 );
 
+// ✅ Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
@@ -108,6 +110,52 @@ app.use(
 // ✅ Handle OPTIONS
 app.options("*", cors());
 
+/// ====================== 🤖 CHATBOT API (Gemini v1) ======================
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "system",
+         content: `You are PredictaCare AI.
+          Rule 1: If the user asks about anything NOT related to healthcare, medicine, anatomy, or wellness (like sports, coding, movies, or general knowledge), you MUST reply with exactly: "I can only answer healthcare-related problems."
+          Rule 2: If the question IS healthcare-related, keep your answer precise and under 3 sentences.
+          Rule 3: Do not provide medical diagnoses or prescriptions.`
+        },
+        {
+          role: "user",
+          content: message,
+        },
+      ],
+      temperature: 0.2,
+    });
+
+    res.json({
+      reply: completion.choices[0].message.content,
+    });
+
+  } catch (error) {
+    console.error("❌ GROQ ERROR:", error);
+    res.status(500).json({ error: "AI service failed" });
+  }
+});
+
+
+
+// ====================================================================
+
+
 // ✅ API Routes
 app.use("/api/admin", adminRouter);
 app.use("/api/doctor", doctorRouter);
@@ -118,7 +166,7 @@ app.use("/api/predictions", predictionRouter);
 app.post("/api/predict/:disease", async (req, res) => {
   try {
     const { disease } = req.params;
-    const flaskURL = `https://prediction-model-ydf5.onrender.com/predict/${disease}`; // Change to Render Flask URL in production
+    const flaskURL = `https://prediction-model-ydf5.onrender.com/predict/${disease}`;
 
     const response = await axios.post(flaskURL, req.body, {
       headers: { "Content-Type": "application/json" },
