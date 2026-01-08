@@ -250,7 +250,8 @@ const diseaseFields = {
         { label: "No", value: 0 },
       ],
     },
-    { name: "Shortness of Breath",
+    {
+      name: "Shortness of Breath",
       label: "Do you experience shortness of breath?",
       type: "select",
       options: [
@@ -278,7 +279,8 @@ const diseaseFields = {
     },
     {
       name: "Dizziness",
-      label: "Have you experienced any episodes of dizziness or light-headedness recently?",
+      label:
+        "Have you experienced any episodes of dizziness or light-headedness recently?",
       type: "select",
       options: [
         { label: "Yes", value: 1 },
@@ -287,7 +289,8 @@ const diseaseFields = {
     },
     {
       name: "Swelling (Edema)",
-      label: "Are you experiencing any swelling or puffiness in your limbs or face?",
+      label:
+        "Are you experiencing any swelling or puffiness in your limbs or face?",
       type: "select",
       options: [
         { label: "Yes", value: 1 },
@@ -312,7 +315,8 @@ const diseaseFields = {
         { label: "No", value: 0 },
       ],
     },
-    { name: "Nausea/Vomiting",
+    {
+      name: "Nausea/Vomiting",
       label: "Have you been feeling nauseous or throwing up often?",
       type: "select",
       options: [
@@ -331,16 +335,18 @@ const diseaseFields = {
     },
     {
       name: "Chest Discomfort (Activity)",
-      label: "Do you experience any chest pain or discomfort during physical activity or exertion?",
+      label:
+        "Do you experience any chest pain or discomfort during physical activity or exertion?",
       type: "select",
       options: [
-        {label: "Yes", value: 1},
-        {label: "No", value: 0},
+        { label: "Yes", value: 1 },
+        { label: "No", value: 0 },
       ],
     },
     {
       name: "Cold Hands/Feet",
-      label: "Have you noticed that your hands or feet often feel unusually cold?",
+      label:
+        "Have you noticed that your hands or feet often feel unusually cold?",
       type: "select",
       options: [
         { label: "Yes", value: 1 },
@@ -356,7 +362,7 @@ const diseaseFields = {
         { label: "No", value: 0 },
       ],
     },
-    {name: "Age", label: "Enter your age", type: "number"},
+    { name: "Age", label: "Enter your age", type: "number" },
   ],
 };
 
@@ -488,8 +494,12 @@ const Prediction = () => {
 
       const result = await response.json();
 
-      const finalRiskLevel = result.risk === "YES" ? "High Risk" : "Low Risk";
-      setRiskPercentage(`${result.probability}%`);
+      const prob = Number(result.probability);
+
+      let finalRiskLevel = "Low Risk";
+      if (prob >= 80) finalRiskLevel = "High Risk";
+      else if (prob >= 50) finalRiskLevel = "Moderate Risk";
+      setRiskPercentage(`${prob}%`);
       setRiskLevel(finalRiskLevel);
       setRiskMessage(
         result.risk === "YES"
@@ -549,39 +559,75 @@ const Prediction = () => {
     });
   };
 
-  const normalValues = {
-    heart: {
-      trestbps: { normal: "90-120", unit: "mm Hg" },
-      chol: { normal: "< 200", unit: "mg/dL" },
-      fbs: { normal: "< 100", unit: "mg/dL" },
-      thalach: { normal: "60-100", unit: "bpm" },
-      oldpeak: { normal: "0-2", unit: "mm" },
-    },
-    diabetes: {
-      pregnancies: { normal: "0-2", unit: "Count" },
-      glucose: { normal: "70-99", unit: "mg/dL" },
-      blood_pressure: { normal: "90-120", unit: "mm Hg" },
-      skin_thickness: { normal: "10-40", unit: "mm" },
-      insulin: { normal: "16-166", unit: "µU/mL" },
-      bmi: { normal: "18.5-24.9", unit: "kg/m²" },
-      dpf: { normal: "0.1-2.5", unit: "Index" },
-    },
-    pcos: {
-      bmi: { normal: "18.5-24.9", unit: "kg/m²" },
-      amh: { normal: "1.0-5.0", unit: "ng/mL" },
-      lh: { normal: "1.5-8.0", unit: "mIU/mL" },
-      fsh_lh: { normal: "1.0-2.0", unit: "Ratio" },
-      cycle_length: { normal: "21-35", unit: "Days" },
-      follicle_L: { normal: "5-10", unit: "Count" },
-      follicle_R: { normal: "5-10", unit: "Count" },
-      tsh: { normal: "0.5-4.5", unit: "mIU/L" },
-      endometrium: { normal: "7-14", unit: "mm" },
-    },
-    stroke: {
-      avg_glucose_level: { normal: "70-99", unit: "mg/dL" },
-      bmi: { normal: "18.5-24.9", unit: "kg/m²" },
-    },
-  };
+const NORMAL_VALUES = {
+  heart: {
+    age: { normal: "18–65", unit: "Years" },
+    trestbps: { normal: "90–120", unit: "mm Hg" },
+    chol: { normal: "< 200", unit: "mg/dL" },
+    fbs: { normal: "< 100", unit: "mg/dL" },
+    thalach: { normal: "60–100", unit: "bpm" },
+    oldpeak: { normal: "0–2", unit: "mm" },
+    cp: { normal: "0–1", unit: "Type" },
+    exang: { normal: "No", unit: "Yes/No" },
+    slope: { normal: "1–2", unit: "Index" },
+    ca: { normal: "0", unit: "Count" },
+    thal: { normal: "Normal", unit: "Type" },
+  },
+
+  diabetes: {
+    age: { normal: "18–60", unit: "Years" },
+    bmi: { normal: "18.5–24.9", unit: "kg/m²" },
+    HbA1c_level: { normal: "< 5.7", unit: "%" },
+    blood_glucose_level: { normal: "70–99", unit: "mg/dL" },
+    hypertension: { normal: "No", unit: "Yes/No" },
+    heart_disease: { normal: "No", unit: "Yes/No" },
+    smoking_history: { normal: "Never", unit: "Category" },
+  },
+
+  pcos: {
+    "Age (yrs)": { normal: "18–35", unit: "Years" },
+    BMI: { normal: "18.5–24.9", unit: "kg/m²" },
+    "AMH(ng/mL)": { normal: "1.0–5.0", unit: "ng/mL" },
+    "LH(mIU/mL)": { normal: "1.5–8.0", unit: "mIU/mL" },
+    "FSH(mIU/mL)": { normal: "3.5–12.5", unit: "mIU/mL" },
+    "FSH/LH": { normal: "1.0–2.0", unit: "Ratio" },
+    "Cycle length(days)": { normal: "21–35", unit: "Days" },
+    "Follicle No. (L)": { normal: "5–10", unit: "Count" },
+    "Follicle No. (R)": { normal: "5–10", unit: "Count" },
+    "Avg. F size (L) (mm)": { normal: "18–24", unit: "mm" },
+    "Avg. F size (R) (mm)": { normal: "18–24", unit: "mm" },
+    "TSH (mIU/L)": { normal: "0.5–4.5", unit: "mIU/L" },
+    "Endometrium (mm)": { normal: "7–14", unit: "mm" },
+    "PRL(ng/mL)": { normal: "5–25", unit: "ng/mL" },
+  },
+
+  stroke: {
+    Age: { normal: "18–65", unit: "Years" },
+    "High Blood Pressure": { normal: "No", unit: "Yes/No" },
+    "Chest Pain": { normal: "No", unit: "Yes/No" },
+    "Shortness of Breath": { normal: "No", unit: "Yes/No" },
+    "Irregular Heartbeat": { normal: "No", unit: "Yes/No" },
+    "Fatigue & Weakness": { normal: "No", unit: "Yes/No" },
+    "Dizziness": { normal: "No", unit: "Yes/No" },
+    "Swelling (Edema)": { normal: "No", unit: "Yes/No" },
+    "Excessive Sweating": { normal: "No", unit: "Yes/No" },
+    "Persistent Cough": { normal: "No", unit: "Yes/No" },
+    "Nausea/Vomiting": { normal: "No", unit: "Yes/No" },
+    "Chest Discomfort (Activity)": { normal: "No", unit: "Yes/No" },
+    "Cold Hands/Feet": { normal: "No", unit: "Yes/No" },
+    "Anxiety/Feeling of Doom": { normal: "No", unit: "Yes/No" },
+  },
+};
+
+const getNormalValue = (disease, fieldName) => {
+  return (
+    NORMAL_VALUES[disease]?.[fieldName] || {
+      normal: "--",
+      unit: "--",
+    }
+  );
+};
+
 
   const handleDownloadCertificate = () => {
     if (!disease || prediction === null) {
@@ -666,10 +712,7 @@ const Prediction = () => {
         ) // Exclude age and gender
         .forEach((field) => {
           let value = formData[field.name] || "N/A";
-          let normalInfo = normalValues[disease][field.name] || {
-            normal: "--",
-            unit: "--",
-          };
+          let normalInfo = getNormalValue(disease, field.name); 
           let normalValue = normalInfo.normal;
           let unit = normalInfo.unit;
 
