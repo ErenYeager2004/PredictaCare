@@ -185,7 +185,6 @@ PredictaCare is a healthcare prediction platform where users can:
   - Disease risk prediction
   - Secure medical data storage using blockchain
   - Health report generation and download
-  - Viewing prediction history
   - Online doctor consultation
   - AI medical chatbot support
 
@@ -197,16 +196,19 @@ PredictaCare is a healthcare prediction platform where users can:
   - Do NOT invent features
 
 - Disease prediction steps:
-  1. Go to Disease Prediction
-  2. Select the disease
-  3. Enter health details
-  4. Click Predict
-  5. View risk result
+  1. Create an account or login to your existing account
+  2. Go to yor profile and navigate to DiagnoAI
+  3. Select desease from the dropdown according to you
+  4. Fillup the quetion asked to make a prediction
+  5. Click on Predict, and wait to get a prediction
+  6. You can see your prediction in the rigt hand side with risk percentage, and below that you can get your prediction certificate.
+  7. After prediction you will get a personalized AI-suggeston button to get some AI suggestion according to your risk percentage.
 
 ================ SAFETY NOTE =========================
 
 - Predictions are for early risk detection only
 - Always recommend consulting a doctor for medical decisions
+- Also you can book doctor appointment through our website just create a new account or login to your existent account , then navigate to Book Appointment section and choose your doctor for booking
 `
         },
         {
