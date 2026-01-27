@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import { marked } from "marked";
 import { assets } from "../assets/assets";
 
