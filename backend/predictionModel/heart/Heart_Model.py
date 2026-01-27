@@ -1,109 +1,153 @@
+import os
 import json
-import numpy as np
+import time
+from pathlib import Path
 import pandas as pd
-import joblib
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from sklearn.utils import class_weight
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.regularizers import l2
-from tensorflow.keras.callbacks import EarlyStopping
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import random
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import roc_auc_score, precision_score, recall_score, f1_score, accuracy_score
+from sklearn.utils.class_weight import compute_class_weight
+from tensorflow import keras
+import joblib
 
-# Set seeds for reproducibility
-seed = 42
-np.random.seed(seed)
-tf.random.set_seed(seed)
-random.seed(seed)
+# ---------------------- CONFIG ---------------------- #
+DATA_URL = "https://customer-assets.emergentagent.com/job_healthpulse-53/artifacts/pgslzhlr_heart_2020_cleaned.csv"
+ARTIFACT_DIR = Path("models")
+MODEL_PATH = ARTIFACT_DIR / "heart_dnn.h5"
+PREPROCESSOR_PATH = ARTIFACT_DIR / "preprocessor.joblib"
+THRESHOLD_PATH = ARTIFACT_DIR / "threshold.json"
 
-# Load JSON dataset
-with open('heart_improved_xgb.json', 'r') as file:
-    data = json.load(file)
+ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+RANDOM_STATE = 42
+np.random.seed(RANDOM_STATE)
 
-df = pd.DataFrame(data)
+# ---------------------- TRAINING ---------------------- #
+def load_data():
+    df = pd.read_csv(DATA_URL)
+    df["HeartDisease"] = (df["HeartDisease"].astype(str).str.strip().str.lower() == "yes").astype(int)
+    return df
 
-# Features & Target
-X = df.drop('target', axis=1)
-y = df['target']
+def build_pipeline(df):
+    numeric_cols = ["BMI", "PhysicalHealth", "MentalHealth", "SleepTime"]
+    categorical_cols = [c for c in df.columns if c not in numeric_cols + ["HeartDisease"]]
 
-# Normalize features
-scaler = MinMaxScaler()
-X_scaled = scaler.fit_transform(X)
-joblib.dump(scaler, 'scaler.pkl')
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), numeric_cols),
+            ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_cols),
+        ]
+    )
+    return preprocessor
 
-# Train-Test Split
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=seed, stratify=y)
+def make_model(input_dim, lr=5e-4, dropout=0.35):
+    inputs = keras.Input(shape=(input_dim,))
+    x = keras.layers.Dense(256, activation="relu")(inputs)
+    x = keras.layers.Dropout(dropout)(x)
+    x = keras.layers.Dense(128, activation="relu")(x)
+    x = keras.layers.Dropout(dropout)(x)
+    x = keras.layers.Dense(64, activation="relu")(x)
+    x = keras.layers.Dropout(dropout)(x)
+    outputs = keras.layers.Dense(1, activation="sigmoid")(x)
 
-# Calculate class weights to handle imbalance
-weights = class_weight.compute_class_weight(class_weight='balanced', classes=np.unique(y_train), y=y_train)
-class_weights = dict(enumerate(weights))
+    model = keras.Model(inputs, outputs)
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=lr),
+        loss="binary_crossentropy",
+        metrics=["accuracy", keras.metrics.AUC(name="auc")]
+    )
+    return model
 
-# Build model
-model = Sequential([
-    Dense(128, activation='relu', input_shape=(X_train.shape[1],), kernel_regularizer=l2(0.001)),
-    BatchNormalization(),
-    Dropout(0.4),
+def tune_threshold(y_true, y_prob):
+    best_t, best_f1 = 0.5, -1
+    for t in np.linspace(0.1, 0.9, 81):
+        f1 = f1_score(y_true, (y_prob >= t).astype(int))
+        if f1 > best_f1:
+            best_f1, best_t = f1, t
+    return float(best_t)
 
-    Dense(64, activation='relu', kernel_regularizer=l2(0.001)),
-    BatchNormalization(),
-    Dropout(0.3),
+def train_if_needed():
+    if MODEL_PATH.exists() and PREPROCESSOR_PATH.exists() and THRESHOLD_PATH.exists():
+        print("✅ Model artifacts found — skipping training.")
+        return
 
-    Dense(32, activation='relu', kernel_regularizer=l2(0.001)),
-    Dropout(0.2),
+    print("🚀 Training new heart disease prediction model...")
+    df = load_data()
+    X, y = df.drop(columns=["HeartDisease"]), df["HeartDisease"]
+    preprocessor = build_pipeline(df)
 
-    Dense(1, activation='sigmoid')
-])
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
+    )
 
-model.compile(optimizer=Adam(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
+    X_train_enc = preprocessor.fit_transform(X_train)
+    X_test_enc = preprocessor.transform(X_test)
 
-# Early stopping
-early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+    model = make_model(X_train_enc.shape[1])
+    model.fit(X_train_enc, y_train, validation_data=(X_test_enc, y_test), epochs=25, batch_size=1024, verbose=2)
 
-# Train
-history = model.fit(
-    X_train, y_train,
-    epochs=100,
-    batch_size=32,
-    validation_data=(X_test, y_test),
-    class_weight=class_weights,
-    callbacks=[early_stop],
-    verbose=1
-)
+    y_prob = model.predict(X_test_enc).ravel()
+    threshold = tune_threshold(y_test, y_prob)
 
-# Save model
-model.save('heart_disease_model_v2.h5')
+    model.save(MODEL_PATH)
+    joblib.dump(preprocessor, PREPROCESSOR_PATH)
+    with open(THRESHOLD_PATH, "w") as f:
+        json.dump({"threshold": threshold}, f)
 
-# Evaluate
-y_pred_probs = model.predict(X_test)
-y_pred = (y_pred_probs > 0.5).astype("int32")
+    print(f"✅ Training complete. Optimal threshold = {threshold:.3f}")
 
-print("Classification Report:\n", classification_report(y_test, y_pred))
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print(f"✅ Test Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+# ---------------------- INFERENCE ---------------------- #
+def load_bundle():
+    print("📦 Loading model and preprocessor...")
+    model = keras.models.load_model(MODEL_PATH)
+    preprocessor = joblib.load(PREPROCESSOR_PATH)
+    with open(THRESHOLD_PATH) as f:
+        threshold = float(json.load(f).get("threshold", 0.5))
+    return model, preprocessor, threshold
 
-# Plot history
-plt.figure(figsize=(12, 5))
+def get_user_input():
+    print("\n🩺 Please enter patient details for prediction:\n")
+    data = {}
+    data["BMI"] = float(input("BMI (e.g., 26.5): "))
+    data["Smoking"] = input("Do you smoke? (yes/no): ").strip().lower() == "yes"
+    data["AlcoholDrinking"] = input("Do you drink alcohol? (yes/no): ").strip().lower() == "yes"
+    data["Stroke"] = input("Have you had a stroke? (yes/no): ").strip().lower() == "yes"
+    data["PhysicalHealth"] = float(input("Physical Health (0–30 days): "))
+    data["MentalHealth"] = float(input("Mental Health (0–30 days): "))
+    data["DiffWalking"] = input("Difficulty walking? (yes/no): ").strip().lower() == "yes"
+    data["Sex"] = input("Sex (Male/Female): ").strip()
+    data["AgeCategory"] = input("Age Category (e.g., 25-29, 50-54): ").strip()
+    data["Race"] = input("Race (e.g., White, Black, Asian): ").strip()
+    data["Diabetic"] = input("Diabetic? (Yes/No): ").strip()
+    data["PhysicalActivity"] = input("Physical activity? (yes/no): ").strip().lower() == "yes"
+    data["GenHealth"] = input("General Health (Excellent/Good/Fair/Poor): ").strip()
+    data["SleepTime"] = float(input("Average sleep time (hours): "))
+    data["Asthma"] = input("Asthma? (yes/no): ").strip().lower() == "yes"
+    data["KidneyDisease"] = input("Kidney disease? (yes/no): ").strip().lower() == "yes"
+    data["SkinCancer"] = input("Skin cancer? (yes/no): ").strip().lower() == "yes"
+    return data
 
-plt.subplot(1, 2, 1)
-plt.plot(history.history['accuracy'], label='Train Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Model Accuracy')
-plt.xlabel('Epoch')
-plt.ylabel('Accuracy')
-plt.legend()
+def predict(model, preprocessor, threshold, payload):
+    X = pd.DataFrame([payload])
+    # Convert booleans to categorical form consistent with training data
+    for k in ["Smoking", "AlcoholDrinking", "Stroke", "DiffWalking",
+              "PhysicalActivity", "Asthma", "KidneyDisease", "SkinCancer"]:
+        X[k] = X[k].apply(lambda v: "Yes" if v else "No")
 
-plt.subplot(1, 2, 2)
-plt.plot(history.history['loss'], label='Train Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
-plt.title('Model Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.legend()
+    X_enc = preprocessor.transform(X)
+    prob = float(model.predict(X_enc, verbose=0).ravel()[0])
+    label = int(prob >= threshold)
 
-plt.tight_layout()
-plt.show()
+    print("\n🧾 Prediction Result:")
+    print(f" - Probability: {prob:.4f}")
+    print(f" - Threshold: {threshold:.4f}")
+    print(f" - Predicted Label: {'❤️ Heart Disease Risk' if label == 1 else '💚 No Significant Risk'}")
+
+# ---------------------- MAIN ---------------------- #
+if __name__ == "__main__":
+    train_if_needed()
+    model, preprocessor, threshold = load_bundle()
+    user_data = get_user_input()
+    predict(model, preprocessor, threshold, user_data)
