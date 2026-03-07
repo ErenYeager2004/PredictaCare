@@ -160,11 +160,18 @@ const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (
-      email === process.env.ADMIN_EMAIL &&
-      password === process.env.ADMIN_PASSWORD
-    ) {
-      const token = jwt.sign(email + password, process.env.JWT_SECRET);
+    if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+
+      const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m' });
+      const refreshToken = jwt.sign({ role: 'admin' }, process.env.JWT_REFRESH_SECRET, { expiresIn: '4h' });
+
+      res.cookie('adminRefreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        maxAge: 4 * 60 * 60 * 1000
+      });
+
       res.json({ success: true, token });
     } else {
       res.json({ success: false, message: "Invalid Credentials" });
@@ -173,6 +180,28 @@ const loginAdmin = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
+};
+
+const refreshAdminToken = async (req, res) => {
+  const refreshToken = req.cookies.adminRefreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: 'Session expired, please login again' });
+  }
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    if (decoded.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not Authorized' });
+    }
+    const newToken = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    res.json({ success: true, token: newToken });
+  } catch (error) {
+    res.status(401).json({ success: false, message: 'Session expired, please login again' });
+  }
+};
+
+const logoutAdmin = (req, res) => {
+  res.clearCookie('adminRefreshToken');
+  res.json({ success: true, message: 'Logged out' });
 };
 
 // API to get all doctors list for admin panel
@@ -389,4 +418,6 @@ export {
   deletePrediction,
   uploadToBlockchain,
   handleDelete,
+  logoutAdmin,
+  refreshAdminToken
 };

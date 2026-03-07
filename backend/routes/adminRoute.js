@@ -1,16 +1,18 @@
 import express from 'express';
-import { 
-    addDoctor, 
-    allDoctors, 
-    loginAdmin, 
-    appointmentsAdmin, 
-    cancelAppointmentAdmin, 
-    adminDashboard, 
-    getPredictions, 
+import {
+    addDoctor,
+    allDoctors,
+    loginAdmin,
+    appointmentsAdmin,
+    cancelAppointmentAdmin,
+    adminDashboard,
+    getPredictions,
     sendForReview,
     deletePrediction,
     uploadToBlockchain,
     handleDelete,
+    refreshAdminToken,
+    logoutAdmin
 } from '../controllers/adminController.js';
 import upload from '../middlewares/multer.js';
 import authAdmin from '../middlewares/authAdmin.js';
@@ -32,4 +34,6 @@ adminRouter.post('/send-review/:predictionId', authAdmin, sendForReview);
 adminRouter.post("/upload-to-blockchain", authAdmin, uploadToBlockchain);
 adminRouter.delete('/delete/:predictionId', authAdmin, deletePrediction);
 adminRouter.delete('/handle-delete/:predictionId', authAdmin, handleDelete);
+adminRouter.post('/refresh-token', refreshAdminToken);
+adminRouter.post('/logout', logoutAdmin);
 export default adminRouter;
