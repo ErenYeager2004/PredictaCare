@@ -3,9 +3,9 @@ import User from "../models/userModel.js";
 
 // Save user data & prediction result with full user details and inputs
 export const savePrediction = async (req, res) => {
-  const { disease, userId, userInputs, predictionResult, probability } = req.body;
+  const { disease, userInputs, predictionResult, probability } = req.body;
+  const userId = req.body.userId; // ← authUser middleware sets this from the token
 
-  // Ensure all required data is present and valid
   if (!disease || !userId || !userInputs || !predictionResult || typeof probability !== "number") {
     return res.status(400).json({ message: "Incomplete or invalid data provided" });
   }
