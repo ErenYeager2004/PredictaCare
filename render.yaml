@@ -4,7 +4,7 @@ services:
     name: predictacare-backend
     env: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: npm install && cd ../frontend && npm install && npm run build && cd ../admin && npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
