@@ -16,7 +16,10 @@ const getAssignedReviews = async (req, res) => {
     }
 
     // ✅ Fetch only "pending" predictions
-    const predictions = await Prediction.find({ doctorId, status: "reviewing" }).sort({ date: -1 });
+    const predictions = await Prediction.find({
+      doctorId,
+      status: "reviewing",
+    }).sort({ date: -1 });
 
     res.json({ success: true, predictions });
   } catch (error) {
@@ -49,12 +52,10 @@ const reviewPrediction = async (req, res) => {
       doctorId,
     });
     if (!prediction) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "Prediction not found or not assigned to you.",
-        });
+      return res.status(404).json({
+        success: false,
+        message: "Prediction not found or not assigned to you.",
+      });
     }
 
     const doctor = await doctorModel.findById(doctorId);
@@ -85,8 +86,10 @@ const changeAvailablity = async (req, res) => {
     });
     res.json({ success: true, message: "Availablity Changed" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -95,8 +98,10 @@ const doctorList = async (req, res) => {
     const doctors = await doctorModel.find({}).select(["-password", "-email"]);
     res.json({ success: true, doctors });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -104,29 +109,41 @@ const doctorList = async (req, res) => {
 
 const loginDoctor = async (req, res) => {
   try {
-    const { email, password } = req.body
-    const doctor = await doctorModel.findOne({ email })
+    const { email, password } = req.body;
+    const doctor = await doctorModel.findOne({ email });
 
-    if (!doctor) return res.json({ success: false, message: "Invalid credentials" })
+    if (!doctor)
+      return res.json({ success: false, message: "Invalid credentials" });
 
-    const isMatch = await bcrypt.compare(password, doctor.password)
-    if (!isMatch) return res.json({ success: false, message: "Invalid credentials" })
+    const isMatch = await bcrypt.compare(password, doctor.password);
+    if (!isMatch)
+      return res.json({ success: false, message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const refreshTokenDoc = jwt.sign({ id: doctor._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
+    const refreshTokenDoc = jwt.sign(
+      { id: doctor._id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" },
+    );
 
-    res.cookie('doctorRefreshToken', refreshTokenDoc, {  // ← different cookie name!
+    res.cookie("doctorRefreshToken", refreshTokenDoc, {
+      // ← different cookie name!
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ success: true, token })
+    res.json({ success: true, token });
   } catch (error) {
-    res.json({ success: false, message: error.message })
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
-}
+};
 
 //api for get doc appointments for doc panel
 
@@ -137,8 +154,10 @@ const appointmentsDoctor = async (req, res) => {
     const appointments = await appointmentModel.find({ docId });
     res.json({ success: true, appointments });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -157,8 +176,10 @@ const appointmentComplete = async (req, res) => {
       return res.json({ success: false, message: "Mark Failed" });
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -175,8 +196,10 @@ const appointmentCancel = async (req, res) => {
       return res.json({ success: false, message: "cancellation Failed" });
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -209,8 +232,10 @@ const doctorDashboard = async (req, res) => {
     };
     res.json({ success: true, dashData });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -222,8 +247,10 @@ const docProfile = async (req, res) => {
     const profileData = await doctorModel.findById(docId).select("-password");
     res.json({ success: true, profileData });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -234,8 +261,10 @@ const editDocProfile = async (req, res) => {
 
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -243,21 +272,27 @@ const editDocProfile = async (req, res) => {
 const refreshDoctorToken = async (req, res) => {
   const refreshToken = req.cookies.doctorRefreshToken;
   if (!refreshToken) {
-    return res.status(401).json({ success: false, message: 'Session expired, please login again' });
+    return res
+      .status(401)
+      .json({ success: false, message: "Session expired, please login again" });
   }
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const newToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const newToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
     res.json({ success: true, token: newToken });
   } catch (error) {
-    res.status(401).json({ success: false, message: 'Session expired, please login again' });
+    res
+      .status(401)
+      .json({ success: false, message: "Session expired, please login again" });
   }
 };
 
 //function for doctor logout
 const logoutDoctor = (req, res) => {
-  res.clearCookie('doctorRefreshToken');
-  res.json({ success: true, message: 'Logged out' });
+  res.clearCookie("doctorRefreshToken");
+  res.json({ success: true, message: "Logged out" });
 };
 
 export {
@@ -273,5 +308,5 @@ export {
   getAssignedReviews,
   reviewPrediction,
   refreshDoctorToken,
-  logoutDoctor
+  logoutDoctor,
 };
