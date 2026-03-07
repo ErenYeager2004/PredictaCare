@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { marked } from "marked";
 import { assets } from "../assets/assets";
 import DOMPurify from 'dompurify';
+import { motion } from "framer-motion";
 
 function MediHubBot() {
   const [messages, setMessages] = useState([]);
