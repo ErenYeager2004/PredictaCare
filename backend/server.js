@@ -262,28 +262,20 @@ app.get("/health", (req, res) => {
   res.status(200).json({ message: "✅ API is running smoothly!" });
 });
 
-// ✅ Serve React Frontend (User)
-app.use(express.static(path.join(__dirname, "../frontend/dist")));
-app.use(
-  "/assets",
-  express.static(path.join(__dirname, "../frontend/dist/assets"))
-);
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  app.use("/assets", express.static(path.join(__dirname, "../frontend/dist/assets")));
+  app.use("/admin/assets", express.static(path.join(__dirname, "../admin/dist/assets")));
+  app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
 
-// ✅ Serve React Admin Panel
-app.use(
-  "/admin/assets",
-  express.static(path.join(__dirname, "../admin/dist/assets"))
-);
-app.use("/admin", express.static(path.join(__dirname, "../admin/dist")));
+  app.get("/admin/*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../admin/dist/index.html"));
+  });
 
-// ✅ React Router fallback
-app.get("/admin/*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../admin/dist/index.html"));
-});
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-});
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  });
+}
 
 // ✅ Global Error Middleware
 app.use(errorHandler);

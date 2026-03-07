@@ -4,9 +4,7 @@ import { toast } from "react-toastify";
 export const AdminContext = createContext();
 
 const AdminContextProvider = (props) => {
-  const [aToken, setAToken] = useState(
-    localStorage.getItem("aToken") ? localStorage.getItem("aToken") : ""
-  );
+  const [aToken, setAToken] = useState("")
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -172,7 +170,7 @@ const AdminContextProvider = (props) => {
       toast.error(error.response?.data?.message || "Failed to delete prediction");
     }
   };
-  
+
   const handleDelete = async (predictionId) => {
     if (!window.confirm("Are you sure you want to delete this prediction?")) return;
 

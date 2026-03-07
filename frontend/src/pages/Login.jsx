@@ -27,7 +27,6 @@ const Login = () => {
       if (state === 'Sign Up') {
         const { data } = await axios.post(backendUrl + '/api/user/register', { name, password, email })
         if (data.success) {
-          localStorage.setItem('token', data.token)
           setToken(data.token)
           toast.success('Account created successfully!')
         } else {
@@ -36,7 +35,6 @@ const Login = () => {
       } else {
         const { data } = await axios.post(backendUrl + '/api/user/login', { password, email })
         if (data.success) {
-          localStorage.setItem('token', data.token)
           setToken(data.token)
           toast.success('Logged in successfully!')
         } else {
@@ -76,7 +74,7 @@ const Login = () => {
           <p>Password</p>
           <div className="relative w-full">
             <input
-              className='border border-zinc-300 rounded w-full p-2 mt-1 pr-12' 
+              className='border border-zinc-300 rounded w-full p-2 mt-1 pr-12'
               type={showPassword ? "text" : "password"}
               onChange={(e) => setPassword(e.target.value)}
               value={password}

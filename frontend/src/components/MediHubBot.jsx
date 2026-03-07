@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { marked } from "marked";
 import { assets } from "../assets/assets";
+import DOMPurify from 'dompurify';
+import { motion } from "framer-motion";
 
 function MediHubBot() {
   const [messages, setMessages] = useState([]);
@@ -85,7 +87,7 @@ function MediHubBot() {
                     ? "bg-[#5f6FFF] text-white"
                     : "bg-[#DCE0FF] text-gray-800"
                 }`}
-                dangerouslySetInnerHTML={{ __html: marked(msg.text) }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(msg.text)) }}
               />
             </div>
           ))}
