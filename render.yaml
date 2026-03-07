@@ -15,6 +15,9 @@ services:
     env: python
     rootDir: backend
     buildCommand: |
-      python3.10 -m pip install --upgrade pip setuptools wheel
-      python3.10 -m pip install -r requirements.txt
-    startCommand: python3.10 server.py
+      pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
