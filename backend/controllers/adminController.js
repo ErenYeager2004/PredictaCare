@@ -27,16 +27,22 @@ const uploadToBlockchain = async (req, res) => {
     const prediction = await Prediction.findById(predictionId).lean();
     if (!prediction) {
       console.error("Prediction not found for ID:", predictionId);
-      return res.status(404).json({ success: false, message: "Prediction not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prediction not found" });
     }
 
     // Check if already uploaded
     if (prediction.status === "uploaded") {
       console.warn("Prediction already uploaded:", predictionId);
-      return res.status(400).json({ success: false, message: "Already uploaded to blockchain" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Already uploaded to blockchain" });
     }
 
-    const userId = prediction?.userData?.id ? prediction.userData.id.toString() : "0";
+    const userId = prediction?.userData?.id
+      ? prediction.userData.id.toString()
+      : "0";
     const disease = prediction.disease;
     const userInputs = JSON.stringify(prediction.userData.inputs);
     const predictionResult = prediction.predictionResult;
@@ -45,7 +51,9 @@ const uploadToBlockchain = async (req, res) => {
     // Ensure contract is initialized
     if (!contract) {
       console.error("Smart contract not initialized");
-      return res.status(500).json({ success: false, message: "Smart contract not initialized" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Smart contract not initialized" });
     }
 
     let tx;
@@ -56,28 +64,48 @@ const uploadToBlockchain = async (req, res) => {
         disease,
         userInputs,
         predictionResult,
-        probabilityInt
+        probabilityInt,
       );
       await tx.wait();
       console.log("Transaction successful! Hash:", tx.hash);
     } catch (error) {
       console.error("Transaction Failed:", error);
-      return res.status(500).json({ success: false, message: `Blockchain transaction failed: ${error.message}` });
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: `Blockchain transaction failed: ${error.message}`,
+        });
     }
 
     // Update MongoDB Status
-    const updateResult = await Prediction.findByIdAndUpdate(predictionId, { status: "uploaded" });
+    const updateResult = await Prediction.findByIdAndUpdate(predictionId, {
+      status: "uploaded",
+    });
     if (!updateResult) {
       console.error("Failed to update MongoDB for prediction:", predictionId);
-      return res.status(500).json({ success: false, message: "Failed to update prediction status" });
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: "Failed to update prediction status",
+        });
     }
 
     console.log("MongoDB updated successfully for:", predictionId);
-    res.json({ success: true, message: "Uploaded to blockchain", txHash: tx.hash });
-
+    res.json({
+      success: true,
+      message: "Uploaded to blockchain",
+      txHash: tx.hash,
+    });
   } catch (error) {
     console.error("Blockchain Upload Error:", error);
-    res.status(500).json({ success: false, message: `Failed to upload to blockchain: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: `Failed to upload to blockchain: ${error.message}`,
+      });
   }
 };
 
@@ -151,8 +179,10 @@ const addDoctor = async (req, res) => {
 
     res.json({ success: true, message: "Doctor Added" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -160,16 +190,24 @@ const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+    if (
+      email === process.env.ADMIN_EMAIL &&
+      password === process.env.ADMIN_PASSWORD
+    ) {
+      const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET, {
+        expiresIn: "15m",
+      });
+      const refreshToken = jwt.sign(
+        { role: "admin" },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: "4h" },
+      );
 
-      const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m' });
-      const refreshToken = jwt.sign({ role: 'admin' }, process.env.JWT_REFRESH_SECRET, { expiresIn: '4h' });
-
-      res.cookie('adminRefreshToken', refreshToken, {
+      res.cookie("adminRefreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Strict',
-        maxAge: 4 * 60 * 60 * 1000
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "Strict",
+        maxAge: 4 * 60 * 60 * 1000,
       });
 
       res.json({ success: true, token });
@@ -185,23 +223,31 @@ const loginAdmin = async (req, res) => {
 const refreshAdminToken = async (req, res) => {
   const refreshToken = req.cookies.adminRefreshToken;
   if (!refreshToken) {
-    return res.status(401).json({ success: false, message: 'Session expired, please login again' });
+    return res
+      .status(401)
+      .json({ success: false, message: "Session expired, please login again" });
   }
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    if (decoded.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Not Authorized' });
+    if (decoded.role !== "admin") {
+      return res
+        .status(403)
+        .json({ success: false, message: "Not Authorized" });
     }
-    const newToken = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const newToken = jwt.sign({ role: "admin" }, process.env.JWT_SECRET, {
+      expiresIn: "15m",
+    });
     res.json({ success: true, token: newToken });
   } catch (error) {
-    res.status(401).json({ success: false, message: 'Session expired, please login again' });
+    res
+      .status(401)
+      .json({ success: false, message: "Session expired, please login again" });
   }
 };
 
 const logoutAdmin = (req, res) => {
-  res.clearCookie('adminRefreshToken');
-  res.json({ success: true, message: 'Logged out' });
+  res.clearCookie("adminRefreshToken");
+  res.json({ success: true, message: "Logged out" });
 };
 
 // API to get all doctors list for admin panel
@@ -243,7 +289,7 @@ const cancelAppointmentAdmin = async (req, res) => {
     let slots_booked = doctorData.slots_booked;
 
     slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime
+      (e) => e !== slotTime,
     );
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
@@ -298,12 +344,10 @@ const sendForReview = async (req, res) => {
 
     // Check if the IDs are coming in
     if (!doctorId || !predictionId) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Doctor ID and Prediction ID are required.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "Doctor ID and Prediction ID are required.",
+      });
     }
 
     // Find the prediction
@@ -324,12 +368,10 @@ const sendForReview = async (req, res) => {
 
     console.log("✅ Prediction updated:", prediction);
 
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Doctor assigned and prediction sent for review.",
-      });
+    res.status(200).json({
+      success: true,
+      message: "Doctor assigned and prediction sent for review.",
+    });
   } catch (error) {
     console.error("🚨 Backend error:", error.message || error);
     res
@@ -349,7 +391,7 @@ const assignDoctorAndReview = async (req, res) => {
     const updatedPrediction = await Prediction.findByIdAndUpdate(
       predictionId,
       { doctorId, status: "reviewing" },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedPrediction) {
@@ -370,12 +412,19 @@ const deletePrediction = async (req, res) => {
     // Find the prediction
     const prediction = await Prediction.findById(predictionId);
     if (!prediction) {
-      return res.status(404).json({ success: false, message: "Prediction not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prediction not found." });
     }
 
     // Ensure it's rejected before deletion
     if (prediction.status !== "rejected") {
-      return res.status(400).json({ success: false, message: "Only rejected predictions can be deleted." });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Only rejected predictions can be deleted.",
+        });
     }
 
     // Delete the prediction
@@ -394,7 +443,9 @@ const handleDelete = async (req, res) => {
     // Find the prediction
     const prediction = await Prediction.findById(predictionId);
     if (!prediction) {
-      return res.status(404).json({ success: false, message: "Prediction not found." });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prediction not found." });
     }
 
     // Delete the prediction (without checking status)
@@ -419,5 +470,5 @@ export {
   uploadToBlockchain,
   handleDelete,
   logoutAdmin,
-  refreshAdminToken
+  refreshAdminToken,
 };

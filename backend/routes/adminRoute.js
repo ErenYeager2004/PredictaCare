@@ -17,11 +17,12 @@ import {
 import upload from '../middlewares/multer.js';
 import authAdmin from '../middlewares/authAdmin.js';
 import { changeAvailablity } from '../controllers/doctorController.js';
+import authLimiter from '../middlewares/authLimiter.js';
 
 const adminRouter = express.Router();
 
 adminRouter.post('/add-doctor', authAdmin, upload.single('image'), addDoctor);
-adminRouter.post('/login', loginAdmin);
+adminRouter.post('/login',authLimiter, loginAdmin);
 adminRouter.post('/all-doctors', authAdmin, allDoctors);
 adminRouter.post('/change-availability', authAdmin, changeAvailablity);
 adminRouter.get('/appointments', authAdmin, appointmentsAdmin);

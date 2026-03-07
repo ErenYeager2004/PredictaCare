@@ -19,6 +19,7 @@ import userRouter from "./routes/userRoute.js";
 import { razorpayWebhook } from "./controllers/userController.js";
 import predictionRouter from "./routes/predictionRoutes.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
+import authUser from "./middlewares/authUser.js";
 
 // ✅ Initialize app
 const app = express();
@@ -240,10 +241,16 @@ app.use("/api/doctor", doctorRouter);
 app.use("/api/user", userRouter);
 app.use("/api/predictions", predictionRouter);
 
-// ✅ Proxy to Python Flask for disease predictions
-app.post("/api/predict/:disease", async (req, res) => {
+const VALID_DISEASES = ['heart', 'diabetes', 'stroke', 'pcos'];
+
+app.post("/api/predict/:disease", authUser, async (req, res) => {
   try {
     const { disease } = req.params;
+
+    if (!VALID_DISEASES.includes(disease)) {
+      return res.status(400).json({ error: "Invalid disease type" });
+    }
+
     const flaskURL = `https://prediction-model-ydf5.onrender.com/predict/${disease}`;
 
     const response = await axios.post(flaskURL, req.body, {
