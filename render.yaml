@@ -1,12 +1,24 @@
 services:
+  # Node.js Backend
   - type: web
-    name: predictacare
+    name: predictacare-backend
     env: node
-    buildCommand: npm install && npm run build
-    startCommand: npm run dev
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.10
       - key: NODE_VERSION
         value: 18
-    autoDeploy: true
+      - key: NODE_ENV
+        value: production
+
+  # Python Flask Prediction Service
+  - type: web
+    name: predictacare-ml
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
