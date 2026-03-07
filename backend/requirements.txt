@@ -1,4 +1,7 @@
+pip
 setuptools>=65.0.0
+wheel
+
 numpy==1.24.3
 pandas==2.0.3
 scikit-learn==1.3.0
@@ -8,3 +11,4 @@ flask==3.0.0
 flask-cors==4.0.0
 matplotlib==3.7.2
 joblib==1.3.2
+gunicorn
