@@ -279,29 +279,35 @@ const cancelAppointmentAdmin = async (req, res) => {
     const { appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
 
-    await appointmentModel.findByIdAndUpdate(appointmentId, {
-      cancelled: true,
-    });
-    // releasing doctor slot
+    if (!appointmentData) {
+      return res.status(404).json({ success: false, message: "Appointment not found" });
+    }
+
+    if (appointmentData.cancelled) {
+      return res.status(400).json({ success: false, message: "Appointment already cancelled" });
+    }
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
 
     const { docId, slotDate, slotTime } = appointmentData;
     const doctorData = await doctorModel.findById(docId);
-    let slots_booked = doctorData.slots_booked;
 
-    slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime,
-    );
+    if (!doctorData) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+
+    let slots_booked = doctorData.slots_booked;
+    slots_booked[slotDate] = slots_booked[slotDate].filter((e) => e !== slotTime);
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "An internal error occurred" });
   }
 };
 
 // api to get dashboard data for admin pannel
-
 const adminDashboard = async (req, res) => {
   try {
     const doctors = await doctorModel.find({});
