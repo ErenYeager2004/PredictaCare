@@ -3,13 +3,11 @@ services:
   - type: web
     name: predictacare-backend
     env: node
-    buildCommand: cd frontend && npm install --include=dev && npm run build && cd ../admin && npm install --include=dev && npm run build && cd ../backend && npm install
-    startCommand: cd backend && npm start
+    buildCommand: export NODE_ENV=development && cd frontend && npm install && npm run build && cd ../admin && npm install && npm run build && cd ../backend && npm install
+    startCommand: cd backend && NODE_ENV=production npm start
     envVars:
       - key: NODE_VERSION
         value: 18
-      - key: NODE_ENV
-        value: production
 
   # Python Flask Prediction Service
   - type: web
