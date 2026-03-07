@@ -8,9 +8,6 @@ const Sidebar = () => {
   const { aToken } = useContext(AdminContext);
   const { dToken } = useContext(DoctorContext);
 
-  console.log("Admin Token:", aToken);
-  console.log("Doctor Token:", dToken);
-
   return (
     <div className="min-h-screen bg-white border-r border-gray-200">
       {/* Admin Sidebar Links */}
