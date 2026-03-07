@@ -3,17 +3,23 @@ import { assets } from '../assets/assets'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext';
 import { toast } from 'react-toastify';
+import axios from 'axios';
 
 const Navbar = () => {
     const navigate = useNavigate();
-    const { token, setToken, userData } = useContext(AppContext);
+    const { token, setToken, userData, backendUrl } = useContext(AppContext);
     const [showMenu, setShowMenu] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const logout = () => {
+     const logout = async () => {  // ← make async
+        try {
+            await axios.post(backendUrl + '/api/user/logout'); // ← clear HttpOnly cookie
+        } catch (error) {
+            console.log(error);
+        }
         setToken(false);
-        localStorage.removeItem('token');
+        localStorage.removeItem('token'); // ← keep this just to clean up any old tokens
         navigate('/');
         toast("Logout Successfully");
     }
