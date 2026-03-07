@@ -8,7 +8,7 @@ import { json } from "express";
 // ✅ Fetch only assigned cases for the doctor
 const getAssignedReviews = async (req, res) => {
   try {
-    const doctorId = req.body.docId; 
+    const doctorId = req.body.docId;
     if (!doctorId) {
       return res
         .status(401)
@@ -104,26 +104,29 @@ const doctorList = async (req, res) => {
 
 const loginDoctor = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const doctor = await doctorModel.findOne({ email });
+    const { email, password } = req.body
+    const doctor = await doctorModel.findOne({ email })
 
-    if (!doctor) {
-      return res.json({ success: false, message: "Invalid Credentials" });
-    }
+    if (!doctor) return res.json({ success: false, message: "Invalid credentials" })
 
-    const isMatch = await bcrypt.compare(password, doctor.password);
+    const isMatch = await bcrypt.compare(password, doctor.password)
+    if (!isMatch) return res.json({ success: false, message: "Invalid credentials" })
 
-    if (isMatch) {
-      const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET);
-      res.json({ success: true, token });
-    } else {
-      res.json({ success: false, message: "Invalid Credentials" });
-    }
+    const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const refreshTokenDoc = jwt.sign({ id: doctor._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+    res.cookie('doctorRefreshToken', refreshTokenDoc, {  // ← different cookie name!
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ success: true, token })
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message })
   }
-};
+}
 
 //api for get doc appointments for doc panel
 
@@ -236,6 +239,27 @@ const editDocProfile = async (req, res) => {
   }
 };
 
+//function for refresh doctor token
+const refreshDoctorToken = async (req, res) => {
+  const refreshToken = req.cookies.doctorRefreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: 'Session expired, please login again' });
+  }
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const newToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    res.json({ success: true, token: newToken });
+  } catch (error) {
+    res.status(401).json({ success: false, message: 'Session expired, please login again' });
+  }
+};
+
+//function for doctor logout
+const logoutDoctor = (req, res) => {
+  res.clearCookie('doctorRefreshToken');
+  res.json({ success: true, message: 'Logged out' });
+};
+
 export {
   changeAvailablity,
   doctorList,
@@ -248,4 +272,6 @@ export {
   docProfile,
   getAssignedReviews,
   reviewPrediction,
+  refreshDoctorToken,
+  logoutDoctor
 };
