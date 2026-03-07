@@ -40,7 +40,15 @@ const registerUser = async (req, res) => {
     const newUser = new userModel(userData)
     const user = await newUser.save()
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
 
     res.json({ success: true, token })
 
@@ -57,7 +65,6 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body
 
     const user = await userModel.findOne({ email })
-
     if (!user) {
       return res.json({ success: false, message: "User does not exists" })
     }
@@ -65,7 +72,17 @@ const loginUser = async (req, res) => {
     const isMatch = await bycrypt.compare(password, user.password)
 
     if (isMatch) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '10m' });
+      const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+      //Send refreshToken as HttpOnly cookie
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+
       res.json({ success: true, token })
     } else {
       res.json({ success: false, message: "Invalid Credentials" })
@@ -155,7 +172,7 @@ const bookAppointment = async (req,res)=>{
 
         const newAppointment = new appointmentModel(appointmentData)
         await newAppointment.save()
-        // save new slotes data 
+        // save new slotes data
         await doctorModel.findByIdAndUpdate(docId,{slots_booked})
         res.json({success:true,message:"Appointments Booked"})
 
@@ -165,7 +182,7 @@ const bookAppointment = async (req,res)=>{
     }
 }
 
-// api to get user appointment to get user appointment is 
+// api to get user appointment to get user appointment is
 
 const listAppointment = async (req,res)=>{
     try {
@@ -344,6 +361,20 @@ const razorpayWebhook = async (req, res) => {
   }
 };
 
+const refreshAccessToken = async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: 'Session expired, please login again' });
+  }
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const newToken = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    res.json({ success: true, token: newToken });
+  } catch (error) {
+    res.status(401).json({ success: false, message: 'Session expired, please login again' });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -354,5 +385,6 @@ export {
   cancelAppointment,
   paymentRazorpay,
   verifyRazorpay,
-  razorpayWebhook
+  razorpayWebhook,
+  refreshAccessToken
 };
