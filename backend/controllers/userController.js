@@ -219,30 +219,42 @@ const listAppointment = async (req, res) => {
 const cancelAppointment = async (req, res) => {
   try {
     const { userId, appointmentId } = req.body;
+
     const appointmentData = await appointmentModel.findById(appointmentId);
-    // verify appointment user
-    if (appointmentData.userId !== userId) {
-      return res.json({ success: false, message: "Unauthorized Action" });
+
+    // ✅ Check appointment exists
+    if (!appointmentData) {
+      return res.status(404).json({ success: false, message: "Appointment not found" });
     }
 
-    await appointmentModel.findByIdAndUpdate(appointmentId, {
-      cancelled: true,
-    });
-    // releasing doctor slot
+    // ✅ Check already cancelled
+    if (appointmentData.cancelled) {
+      return res.status(400).json({ success: false, message: "Appointment already cancelled" });
+    }
+
+    // ✅ Explicit string comparison for ObjectID ownership check
+    if (appointmentData.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized Action" });
+    }
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
 
     const { docId, slotDate, slotTime } = appointmentData;
     const doctorData = await doctorModel.findById(docId);
-    let slots_booked = doctorData.slots_booked;
 
-    slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime,
-    );
+    // ✅ Check doctor exists
+    if (!doctorData) {
+      return res.status(404).json({ success: false, message: "Doctor not found" });
+    }
+
+    let slots_booked = doctorData.slots_booked;
+    slots_booked[slotDate] = slots_booked[slotDate].filter((e) => e !== slotTime);
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: "An internal error occurred" });
   }
 };
 
