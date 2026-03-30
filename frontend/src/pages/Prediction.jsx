@@ -1,941 +1,1565 @@
 import React, { useState, useEffect, useContext } from "react";
-import { PieChart, Pie, Cell, Tooltip } from "recharts";
-import jsPDF from "jspdf";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
+import jsPDF from "jspdf";
 import logo from "../assets/logo.png";
-import { assets } from "../assets/assets";
+import UpgradeModal from "../components/UpgradeModal";
+import BlockchainBadge from "../components/BlockchainBadge";
 
-const diseaseFields = {
-  heart: [
-    { name: "user_name", label: "Full Name", type: "text" },
-    { name: "age", label: "Age", type: "number" },
-    {
-      name: "sex",
-      label: "Sex",
-      type: "select",
-      options: [
-        { label: "Male", value: 1 },
-        { label: "Female", value: 0 },
-      ],
-    },
-    {
-      name: "cp",
-      label: "Chest Pain Type",
-      type: "select",
-      options: [
-        { label: "0", value: 0 },
-        { label: "1", value: 1 },
-        { label: "2", value: 2 },
-        { label: "3", value: 3 },
-      ],
-    },
-    {
-      name: "trestbps",
-      label: "Resting Blood Pressure (mm Hg)",
-      type: "number",
-    },
-    { name: "chol", label: "Cholesterol (mg/dL)", type: "number" },
-    {
-      name: "fbs",
-      label: "Fasting Blood Sugar > 120 mg/dL",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "restecg",
-      label: "Resting ECG Results",
-      type: "select",
-      options: [
-        { label: "0", value: 0 },
-        { label: "1", value: 1 },
-        { label: "2", value: 2 },
-      ],
-    },
-    { name: "thalach", label: "Max Heart Rate Achieved", type: "number" },
-    {
-      name: "exang",
-      label: "Exercise Induced Angina",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    { name: "oldpeak", label: "ST Depression (Oldpeak)", type: "number" },
-    {
-      name: "slope",
-      label: "Slope of Peak Exercise ST Segment",
-      type: "select",
-      options: [
-        { label: "0", value: 0 },
-        { label: "1", value: 1 },
-        { label: "2", value: 2 },
-      ],
-    },
-    {
-      name: "ca",
-      label: "Number of Major Vessels (0-3)",
-      type: "select",
-      options: [
-        { label: "0", value: 0 },
-        { label: "1", value: 1 },
-        { label: "2", value: 2 },
-        { label: "3", value: 3 },
-      ],
-    },
-    {
-      name: "thal",
-      label: "Thalassemia",
-      type: "select",
-      options: [
-        { label: "Normal", value: 1 },
-        { label: "Fixed Defect", value: 2 },
-        { label: "Reversible Defect", value: 3 },
-      ],
-    },
-  ],
-  diabetes: [
-    { name: "user_name", label: "Full Name", type: "text" },
-    {
-      name: "gender",
-      label: "Enter your gender",
-      type: "select",
-      options: [
-        { label: "Male", value: 1 },
-        { label: "Female", value: 0 },
-      ],
-    },
-    { name: "age", label: "Enter your age", type: "number" },
-    {
-      name: "hypertension",
-      label: "Do you have Hypertension?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "heart_disease",
-      label: "Do you have Heart Problem/Disease?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "smoking_history",
-      label: "Ever smoked?",
-      type: "select",
-      options: [
-        { label: "Never", value: "never" },
-        { label: "Current", value: "current" },
-        { label: "Past", value: "past" },
-        { label: "Former", value: "former" },
-        { label: "Not Current", value: "not current" },
-      ],
-    },
-    { name: "bmi", label: "Enter your BMI", type: "number" },
-    { name: "HbA1c_level", label: "Enter your Hba1c level", type: "number" }, // <-- renamed
-    {
-      name: "blood_glucose_level",
-      label: "Enter your glucose level",
-      type: "number",
-    }, // <-- renamed
-  ],
-
-  pcos: [
-    { name: "user_name", label: "Full Name", type: "text" },
-    { name: "Age (yrs)", label: "Age (in years)", type: "number" },
-    { name: "BMI", label: "BMI", type: "number" },
-    { name: "AMH(ng/mL)", label: "AMH (ng/mL)", type: "number" },
-    { name: "LH(mIU/mL)", label: "LH (mIU/mL)", type: "number" },
-    { name: "FSH(mIU/mL)", label: "FSH (mIU/mL)", type: "number" },
-    { name: "FSH/LH", label: "FSH/LH Ratio", type: "number" },
-    {
-      name: "Cycle length(days)",
-      label: "Cycle Length (days)",
-      type: "number",
-    },
-    {
-      name: "Cycle(R/I)",
-      label: "Cycle Regularity",
-      type: "select",
-      options: [
-        { label: "Regular", value: 0 },
-        { label: "Irregular", value: 1 },
-      ],
-    },
-    {
-      name: "Weight gain(Y/N)",
-      label: "Weight Gain",
-      type: "select",
-      options: [
-        { label: "No", value: 0 },
-        { label: "Yes", value: 1 },
-      ],
-    },
-    {
-      name: "hair growth(Y/N)",
-      label: "Hair Growth",
-      type: "select",
-      options: [
-        { label: "No", value: 0 },
-        { label: "Yes", value: 1 },
-      ],
-    },
-    {
-      name: "Skin darkening (Y/N)",
-      label: "Skin Darkening",
-      type: "select",
-      options: [
-        { label: "No", value: 0 },
-        { label: "Yes", value: 1 },
-      ],
-    },
-    {
-      name: "Hair loss(Y/N)",
-      label: "Hair Loss",
-      type: "select",
-      options: [
-        { label: "No", value: 0 },
-        { label: "Yes", value: 1 },
-      ],
-    },
-    {
-      name: "Pimples(Y/N)",
-      label: "Pimples",
-      type: "select",
-      options: [
-        { label: "No", value: 0 },
-        { label: "Yes", value: 1 },
-      ],
-    },
-    { name: "Follicle No. (L)", label: "Follicle No. (Left)", type: "number" },
-    { name: "Follicle No. (R)", label: "Follicle No. (Right)", type: "number" },
-    {
-      name: "Avg. F size (L) (mm)",
-      label: "Follicle Size (Left) (mm)",
-      type: "number",
-    },
-    {
-      name: "Avg. F size (R) (mm)",
-      label: "Follicle Size (Right) (mm)",
-      type: "number",
-    },
-    { name: "TSH (mIU/L)", label: "TSH (mIU/L)", type: "number" },
-    {
-      name: "Endometrium (mm)",
-      label: "Endometrium Thickness (mm)",
-      type: "number",
-    },
-    { name: "PRL(ng/mL)", label: "Prolactin (ng/mL)", type: "number" },
-  ],
-
-  stroke: [
-    { name: "user_name", label: "Full Name", type: "text" },
-    {
-      name: "Chest Pain",
-      label: "Have you experienced chest pain?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Shortness of Breath",
-      label: "Do you experience shortness of breath?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Irregular Heartbeat",
-      label: "Have you been experiencing an irregular heartbeat?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Fatigue & Weakness",
-      label: "Do you often feel unusually tired or lacking in energy?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Dizziness",
-      label:
-        "Have you experienced any episodes of dizziness or light-headedness recently?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Swelling (Edema)",
-      label:
-        "Are you experiencing any swelling or puffiness in your limbs or face?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Excessive Sweating",
-      label: "Have you been experiencing excessive sweating?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Persistent Cough",
-      label: "Are you experiencing a persistent or long-lasting cough?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Nausea/Vomiting",
-      label: "Have you been feeling nauseous or throwing up often?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "High Blood Pressure",
-      label: "Have you ever been diagnosed with high blood pressure?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Chest Discomfort (Activity)",
-      label:
-        "Do you experience any chest pain or discomfort during physical activity or exertion?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Cold Hands/Feet",
-      label:
-        "Have you noticed that your hands or feet often feel unusually cold?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    {
-      name: "Anxiety/Feeling of Doom",
-      label: "Have you been feeling unusually anxious or tense lately?",
-      type: "select",
-      options: [
-        { label: "Yes", value: 1 },
-        { label: "No", value: 0 },
-      ],
-    },
-    { name: "Age", label: "Enter your age", type: "number" },
-  ],
+/* ─────────────────────────────────────────────────────────────────────────────
+   FONT INJECTION — Space Grotesk (headings) + Inter (body)
+───────────────────────────────────────────────────────────────────────────── */
+const injectFonts = () => {
+  if (document.getElementById("diagnoai-fonts")) return;
+  const link = document.createElement("link");
+  link.id = "diagnoai-fonts";
+  link.rel = "stylesheet";
+  link.href =
+    "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap";
+  document.head.appendChild(link);
 };
 
-const getRiskColor = (percentage) => {
-  if (percentage <= 50) return "#10B981"; // Green (Low Risk)
-  if (percentage <= 80) return "#F59E0B"; // Orange (Moderate Risk)
-  return "#EF4444"; // Red (High Risk)
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MODEL METADATA
+───────────────────────────────────────────────────────────────────────────── */
+const MODEL_INFO = {
+  diabetes: {
+    free: {
+      roc: 0.8191,
+      recall: 0.85,
+      label: "Self-reported only",
+      model: "XGBoost Lite",
+    },
+    premium: {
+      roc: 0.9745,
+      recall: 0.85,
+      label: "Includes blood markers",
+      model: "Deep Neural Network",
+    },
+    upsell: "+15.5% accuracy — add HbA1c & blood glucose",
+    isBeta: false,
+  },
+  heart: {
+    free: {
+      roc: 0.9922,
+      recall: 0.88,
+      label: "Self-reported only",
+      model: "XGBoost Lite",
+    },
+    premium: {
+      roc: 0.9357,
+      recall: 0.82,
+      label: "ECG + lab analysis",
+      model: "Deep Neural Network",
+    },
+    upsell: "Premium adds blockchain verification & ECG analysis",
+    isBeta: false,
+  },
+  pcos: {
+    free: {
+      roc: 0.879,
+      recall: 0.83,
+      label: "Symptom-based",
+      model: "XGBoost Lite",
+    },
+    premium: {
+      roc: 0.9365,
+      recall: 0.81,
+      label: "Includes lab results",
+      model: "Deep Neural Network",
+    },
+    upsell: "+5.75% accuracy — add AMH, LH, FSH lab results",
+    isBeta: false,
+  },
+  stroke: {
+    free: {
+      roc: 0.7767,
+      recall: 0.82,
+      label: "Beta — limited dataset",
+      model: "XGBoost Lite",
+    },
+    premium: {
+      roc: 0.7258,
+      recall: 0.82,
+      label: "Beta — limited dataset",
+      model: "Deep Neural Network",
+    },
+    upsell: "Both tiers are experimental for stroke",
+    isBeta: true,
+  },
 };
 
-const Preloader = () => {
+const DISEASE_LABEL = {
+  heart: "Heart Disease",
+  diabetes: "Diabetes",
+  pcos: "PCOS",
+  stroke: "Stroke",
+};
+const SPECIALIST = {
+  heart: "Cardiologist",
+  diabetes: "Endocrinologist",
+  pcos: "Gynaecologist / Endocrinologist",
+  stroke: "Neurologist",
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   DISEASE FIELDS
+───────────────────────────────────────────────────────────────────────────── */
+const DISEASE_FIELDS = {
+  diabetes: {
+    required: [
+      { name: "user_name", label: "Full Name", type: "text" },
+      { name: "age", label: "Age", type: "number", min: 1, max: 120 },
+      {
+        name: "gender",
+        label: "Gender",
+        type: "select",
+        options: [
+          { label: "Male", value: "Male" },
+          { label: "Female", value: "Female" },
+        ],
+      },
+      {
+        name: "hypertension",
+        label: "Hypertension",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "heart_disease",
+        label: "Heart Disease",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "smoking_history",
+        label: "Smoking History",
+        type: "select",
+        options: [
+          { label: "Never", value: "never" },
+          { label: "Current", value: "current" },
+          { label: "Former", value: "former" },
+          { label: "Not Current", value: "not current" },
+          { label: "Ever", value: "ever" },
+          { label: "No Info", value: "No Info" },
+        ],
+      },
+      {
+        name: "bmi",
+        label: "BMI",
+        type: "number",
+        step: 0.1,
+        min: 10,
+        max: 70,
+        hint: "18.5–24.9",
+      },
+    ],
+    optional: [
+      {
+        name: "HbA1c_level",
+        label: "HbA1c Level",
+        type: "number",
+        step: 0.1,
+        unit: "%",
+        hint: "< 5.7",
+      },
+      {
+        name: "blood_glucose_level",
+        label: "Blood Glucose",
+        type: "number",
+        unit: "mg/dL",
+        hint: "70–99",
+      },
+    ],
+  },
+  heart: {
+    required: [
+      { name: "user_name", label: "Full Name", type: "text" },
+      { name: "age", label: "Age", type: "number", min: 1, max: 120 },
+      {
+        name: "sex",
+        label: "Sex",
+        type: "select",
+        options: [
+          { label: "Male", value: 1 },
+          { label: "Female", value: 0 },
+        ],
+      },
+      {
+        name: "cp",
+        label: "Chest Pain Type",
+        type: "select",
+        options: [
+          { label: "Typical Angina", value: 0 },
+          { label: "Atypical Angina", value: 1 },
+          { label: "Non-Anginal Pain", value: 2 },
+          { label: "Asymptomatic", value: 3 },
+        ],
+      },
+      {
+        name: "trestbps",
+        label: "Resting Blood Pressure",
+        type: "number",
+        unit: "mm Hg",
+        hint: "90–120",
+      },
+      {
+        name: "exang",
+        label: "Exercise Induced Angina",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+    ],
+    optional: [
+      {
+        name: "chol",
+        label: "Cholesterol",
+        type: "number",
+        unit: "mg/dL",
+        hint: "< 200",
+      },
+      {
+        name: "restecg",
+        label: "Resting ECG",
+        type: "select",
+        options: [
+          { label: "Normal", value: 0 },
+          { label: "ST-T Wave Abnormality", value: 1 },
+          { label: "Left Ventricular Hypertrophy", value: 2 },
+        ],
+      },
+      {
+        name: "thalach",
+        label: "Max Heart Rate",
+        type: "number",
+        unit: "bpm",
+        hint: "60–100",
+      },
+      {
+        name: "oldpeak",
+        label: "ST Depression",
+        type: "number",
+        step: 0.1,
+        unit: "mm",
+        hint: "0–2",
+      },
+      {
+        name: "slope",
+        label: "ST Slope",
+        type: "select",
+        options: [
+          { label: "Upsloping", value: 0 },
+          { label: "Flat", value: 1 },
+          { label: "Downsloping", value: 2 },
+        ],
+      },
+      {
+        name: "ca",
+        label: "Major Vessels (0–3)",
+        type: "select",
+        options: [
+          { label: "0", value: 0 },
+          { label: "1", value: 1 },
+          { label: "2", value: 2 },
+          { label: "3", value: 3 },
+        ],
+      },
+      {
+        name: "thal",
+        label: "Thalassemia",
+        type: "select",
+        options: [
+          { label: "Normal", value: 1 },
+          { label: "Fixed Defect", value: 2 },
+          { label: "Reversible Defect", value: 3 },
+        ],
+      },
+    ],
+  },
+  pcos: {
+    required: [
+      { name: "user_name", label: "Full Name", type: "text" },
+      { name: "Age (yrs)", label: "Age", type: "number", min: 10, max: 60 },
+      {
+        name: "BMI",
+        label: "BMI",
+        type: "number",
+        step: 0.1,
+        hint: "18.5–24.9",
+      },
+      {
+        name: "Waist(inch)",
+        label: "Waist Circumference",
+        type: "number",
+        step: 0.1,
+        unit: "inches",
+      },
+      {
+        name: "Cycle(R/I)",
+        label: "Menstrual Cycle",
+        type: "select",
+        options: [
+          { label: "Regular", value: 2 },
+          { label: "Irregular", value: 4 },
+        ],
+      },
+      {
+        name: "Cycle length(days)",
+        label: "Cycle Length",
+        type: "number",
+        unit: "days",
+        hint: "21–35",
+      },
+      {
+        name: "Weight gain(Y/N)",
+        label: "Unexplained Weight Gain",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "hair growth(Y/N)",
+        label: "Excess Hair Growth",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "Skin darkening (Y/N)",
+        label: "Skin Darkening",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "Hair loss(Y/N)",
+        label: "Hair Loss",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "Pimples(Y/N)",
+        label: "Pimples / Acne",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "Fast food (Y/N)",
+        label: "Fast Food Consumption",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+    ],
+    optional: [
+      {
+        name: "AMH(ng/mL)",
+        label: "AMH",
+        type: "number",
+        step: 0.01,
+        unit: "ng/mL",
+        hint: "1.0–5.0",
+      },
+      {
+        name: "LH(mIU/mL)",
+        label: "LH",
+        type: "number",
+        step: 0.1,
+        unit: "mIU/mL",
+        hint: "1.5–8.0",
+      },
+      {
+        name: "FSH(mIU/mL)",
+        label: "FSH",
+        type: "number",
+        step: 0.1,
+        unit: "mIU/mL",
+        hint: "3.5–12.5",
+      },
+      {
+        name: "Follicle No. (L)",
+        label: "Follicle Count (Left)",
+        type: "number",
+        hint: "5–10",
+      },
+      {
+        name: "Follicle No. (R)",
+        label: "Follicle Count (Right)",
+        type: "number",
+        hint: "5–10",
+      },
+      {
+        name: "Avg. F size (L) (mm)",
+        label: "Avg. Follicle Size Left",
+        type: "number",
+        step: 0.1,
+        unit: "mm",
+        hint: "18–24",
+      },
+      {
+        name: "Avg. F size (R) (mm)",
+        label: "Avg. Follicle Size Right",
+        type: "number",
+        step: 0.1,
+        unit: "mm",
+        hint: "18–24",
+      },
+    ],
+  },
+  stroke: {
+    required: [
+      { name: "user_name", label: "Full Name", type: "text" },
+      { name: "age", label: "Age", type: "number", min: 1, max: 120 },
+      {
+        name: "hypertension",
+        label: "Hypertension",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "heart_disease",
+        label: "Heart Disease",
+        type: "select",
+        options: [
+          { label: "Yes", value: 1 },
+          { label: "No", value: 0 },
+        ],
+      },
+      {
+        name: "avg_glucose_level",
+        label: "Avg. Glucose Level",
+        type: "number",
+        step: 0.1,
+        unit: "mg/dL",
+        hint: "70–99",
+      },
+      {
+        name: "bmi",
+        label: "BMI",
+        type: "number",
+        step: 0.1,
+        hint: "18.5–24.9",
+      },
+      {
+        name: "smoking_status",
+        label: "Smoking Status",
+        type: "select",
+        options: [
+          { label: "Never Smoked", value: "never smoked" },
+          { label: "Formerly Smoked", value: "formerly smoked" },
+          { label: "Smokes", value: "smokes" },
+          { label: "Unknown", value: "Unknown" },
+        ],
+      },
+    ],
+    optional: [],
+  },
+};
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   NORMAL REFERENCE VALUES
+───────────────────────────────────────────────────────────────────────────── */
+const NORMAL_VALUES = {
+  diabetes: {
+    age: { normal: "18–60", unit: "yrs" },
+    bmi: { normal: "18.5–24.9", unit: "kg/m²" },
+    HbA1c_level: { normal: "< 5.7", unit: "%" },
+    blood_glucose_level: { normal: "70–99", unit: "mg/dL" },
+  },
+  heart: {
+    age: { normal: "18–65", unit: "yrs" },
+    trestbps: { normal: "90–120", unit: "mm Hg" },
+    chol: { normal: "< 200", unit: "mg/dL" },
+    thalach: { normal: "60–100", unit: "bpm" },
+    oldpeak: { normal: "0–2", unit: "mm" },
+    ca: { normal: "0", unit: "count" },
+  },
+  pcos: {
+    "Age (yrs)": { normal: "18–35", unit: "yrs" },
+    BMI: { normal: "18.5–24.9", unit: "kg/m²" },
+    "AMH(ng/mL)": { normal: "1.0–5.0", unit: "ng/mL" },
+    "Cycle length(days)": { normal: "21–35", unit: "days" },
+  },
+  stroke: {
+    age: { normal: "18–65", unit: "yrs" },
+    avg_glucose_level: { normal: "70–99", unit: "mg/dL" },
+    bmi: { normal: "18.5–24.9", unit: "kg/m²" },
+  },
+};
+const getNormal = (disease, name) =>
+  NORMAL_VALUES[disease]?.[name] || { normal: "—", unit: "—" };
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RISK GAUGE
+───────────────────────────────────────────────────────────────────────────── */
+const RiskGauge = ({ value = 0, risk = "" }) => {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const color = v <= 50 ? "#0d9488" : v < 80 ? "#d97706" : "#dc2626";
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-r from-blue-300 to-blue-100 z-50">
-      {/* Animated Logo */}
-      <motion.h1
-        className="text-5xl font-bold text-blue-600 tracking-wide mb-4"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: "easeOut" }}
-      >
-        DIAGNO<span className="text-gray-800">AI</span>
-      </motion.h1>
-
-      {/* Animated Subheading */}
-      <motion.p
-        className="text-xl text-gray-500"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-      >
-        Your health insights, one prediction away...
-      </motion.p>
-
-      {/* Pulse Loader with Custom Animation */}
-      <div className="flex gap-1 mt-4">
-        <motion.div
-          className="w-2 h-2 bg-blue-600 rounded-full"
-          animate={{ y: [-5, 5, -5] }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="w-2 h-2 bg-blue-600 rounded-full"
-          animate={{ y: [-5, 5, -5] }}
-          transition={{
-            duration: 0.8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.2,
-          }}
-        />
-        <motion.div
-          className="w-2 h-2 bg-blue-600 rounded-full"
-          animate={{ y: [-5, 5, -5] }}
-          transition={{
-            duration: 0.8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.4,
-          }}
-        />
+    <div className="relative h-36 w-36 flex-shrink-0">
+      <div
+        className="rounded-full h-36 w-36"
+        style={{
+          background: `conic-gradient(${color} ${v * 3.6}deg, #e2e8f0 0deg)`,
+          filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.10))",
+        }}
+      />
+      <div className="absolute inset-3 rounded-full bg-white flex flex-col items-center justify-center">
+        <span
+          className="text-2xl font-bold leading-none"
+          style={{ color, fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+          {v}%
+        </span>
+        <span className="text-[10px] text-slate-400 mt-0.5 font-medium tracking-wide">
+          RISK
+        </span>
       </div>
     </div>
   );
 };
 
-const Prediction = () => {
-  const { userData } = useContext(AppContext);
-  const [pageLoading, setPageLoading] = useState(true);
-  const [disease, setDisease] = useState("");
-  const [formData, setFormData] = useState({});
-  const [riskPercentage, setRiskPercentage] = useState("0%");
-  const [riskLevel, setRiskLevel] = useState("Low Risk");
-  const [riskMessage, setRiskMessage] = useState(
-    "Please fill out the form to get your disease risk prediction."
-  );
-  const [loading, setLoading] = useState(false);
-  const [prediction, setPrediction] = useState(null);
+const MetricBar = ({ label, value }) => (
+  <div>
+    <div className="flex justify-between mb-1">
+      <span className="text-xs text-slate-500">{label}</span>
+      <span className="text-xs font-semibold text-teal-700">
+        {value.toFixed(4)}
+      </span>
+    </div>
+    <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+      <motion.div
+        className="h-full rounded-full bg-teal-500"
+        initial={{ width: 0 }}
+        animate={{ width: `${value * 100}%` }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      />
+    </div>
+  </div>
+);
 
+const Skeleton = ({ className = "" }) => (
+  <div className={`animate-pulse rounded-lg bg-slate-100 ${className}`} />
+);
+
+const FieldInput = ({ field, value, onChange }) => (
+  <div className="space-y-1">
+    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+      {field.label}
+      {field.unit && (
+        <span className="ml-1 font-normal normal-case text-slate-400">
+          ({field.unit})
+        </span>
+      )}
+      {field.hint && (
+        <span className="ml-1 font-normal normal-case text-slate-400">
+          · normal {field.hint}
+        </span>
+      )}
+    </label>
+    {field.type === "select" ? (
+      <select
+        name={field.name}
+        value={value ?? ""}
+        onChange={onChange}
+        className="w-full h-10 px-3 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 hover:border-slate-300 transition-colors"
+      >
+        <option value="">Select…</option>
+        {field.options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    ) : (
+      <input
+        type={field.type === "text" ? "text" : "number"}
+        name={field.name}
+        value={value ?? ""}
+        onChange={onChange}
+        step={field.step}
+        min={field.min}
+        max={field.max}
+        placeholder="—"
+        className="w-full h-10 px-3 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 hover:border-slate-300 transition-colors"
+      />
+    )}
+  </div>
+);
+
+const ConsultModal = ({ disease, onClose }) => (
+  <motion.div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    onClick={onClose}
+  >
+    <motion.div
+      className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full"
+      initial={{ scale: 0.95, y: 16 }}
+      animate={{ scale: 1, y: 0 }}
+      exit={{ scale: 0.95, y: 16 }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center gap-3 mb-5">
+        <div className="h-10 w-10 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
+          <svg
+            className="w-5 h-5 text-teal-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h3
+            className="font-semibold text-slate-800 text-base"
+            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            Doctor Consultation
+          </h3>
+          <p className="text-xs text-slate-400">Premium benefit</p>
+        </div>
+      </div>
+      <div className="bg-teal-50 rounded-xl px-4 py-3 mb-4">
+        <p className="text-xs text-teal-600 font-medium mb-0.5">
+          Recommended Specialist
+        </p>
+        <p className="text-sm font-semibold text-teal-800">
+          {SPECIALIST[disease] || "General Physician"}
+        </p>
+      </div>
+      <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-4">
+        <div>
+          <p className="text-xs text-slate-500">Video consultation</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            30-min verified specialist call
+          </p>
+        </div>
+        <span
+          className="text-lg font-bold text-slate-800"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+        >
+          ₹299
+        </span>
+      </div>
+      <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-5">
+        <svg
+          className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p className="text-xs text-amber-700">
+          <strong>Launching Soon</strong> — Bookings will open once our doctor
+          network is onboarded. You'll be notified when it's live.
+        </p>
+      </div>
+      <button
+        onClick={onClose}
+        className="w-full h-10 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
+      >
+        Got it
+      </button>
+    </motion.div>
+  </motion.div>
+);
+
+const Preloader = () => (
+  <div
+    className="fixed inset-0 z-50 flex flex-col items-center justify-center"
+    style={{ background: "hsl(210 20% 98%)" }}
+  >
+    <motion.h1
+      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+      className="text-5xl font-bold tracking-tight text-slate-800 mb-2"
+      initial={{ opacity: 0, y: -14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7 }}
+    >
+      DIAGNO<span className="text-teal-600">AI</span>
+    </motion.h1>
+    <motion.p
+      className="text-sm text-slate-400 mb-7"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.35 }}
+    >
+      Clinical-grade risk assessment
+    </motion.p>
+    <div className="flex gap-1.5">
+      {[0, 0.14, 0.28].map((d, i) => (
+        <motion.span
+          key={i}
+          className="block w-2 h-2 rounded-full bg-teal-500"
+          animate={{ y: [-4, 4, -4] }}
+          transition={{ duration: 0.65, repeat: Infinity, delay: d }}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MAIN COMPONENT
+───────────────────────────────────────────────────────────────────────────── */
+export default function Prediction() {
+  const { userData, token, loadUserProfileData } = useContext(AppContext);
   const navigate = useNavigate();
 
+  const [pageLoading, setPageLoading] = useState(true);
+  const [disease, setDisease] = useState(
+    () => sessionStorage.getItem("pc_disease") || "",
+  );
+  const [isPremium, setIsPremium] = useState(true);
+  const [showOptional, setShowOptional] = useState(false);
+  const [formData, setFormData] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("pc_formData") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("pc_result") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const [showConsult, setShowConsult] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [localTrialUsed, setLocalTrialUsed] = useState(null);
+
+  const userIsPremium =
+    userData?.subscription === "premium" &&
+    userData?.subscriptionExpiry &&
+    new Date(userData.subscriptionExpiry) > new Date();
+
+  const currentTrialUsed =
+    localTrialUsed !== null
+      ? localTrialUsed
+      : (userData?.predictionsUsed ?? result?.predictionsUsed ?? 0);
+  const trialLimit =
+    userData?.predictionsLimit ?? result?.predictionsLimit ?? 5;
+  const trialUsedUp = currentTrialUsed >= trialLimit;
+  const canUsePremium = userIsPremium || !trialUsedUp;
+
   useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 2500);
-    return () => clearTimeout(timer);
+    injectFonts();
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => setPageLoading(false), 2000);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
-    setFormData({});
-    setPrediction(null);
+    const savedDisease = sessionStorage.getItem("pc_disease");
+    if (disease && disease !== savedDisease) {
+      setFormData({});
+      setResult(null);
+      setShowOptional(false);
+      sessionStorage.removeItem("pc_result");
+      sessionStorage.removeItem("pc_formData");
+      sessionStorage.setItem("pc_disease", disease);
+    }
+    setIsPremium(!trialUsedUp);
   }, [disease]);
 
-  const handleInputChange = (e) => {
+  useEffect(() => {
+    if (trialUsedUp && !userIsPremium) setIsPremium(false);
+  }, [trialUsedUp, userIsPremium]);
+
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  const handlePrediction = async () => {
+  const handlePredict = async () => {
     if (!disease) {
-      toast.error("Please select a disease");
+      toast.error("Please select a condition");
+      return;
+    }
+    if (!token) {
+      toast.error("Please log in to make predictions");
       return;
     }
 
-    const requiredFields = diseaseFields[disease].map((field) => field.name);
-    for (let field of requiredFields) {
-      if (field !== "user_name" && !formData[field] && formData[field] !== 0) {
-        alert(`Please fill the field: ${field}`);
+    const reqFields = DISEASE_FIELDS[disease].required;
+    for (const f of reqFields) {
+      if (f.name === "user_name") continue;
+      if (formData[f.name] === undefined || formData[f.name] === "") {
+        toast.error(`Please fill: ${f.label}`);
         return;
       }
     }
 
     setLoading(true);
-
     try {
-      const { user_name, ...predictionData } = formData;
-
-      const response = await fetch(
-        `https://prediction-model-ydf5.onrender.com/predict/${disease}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(predictionData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch prediction");
+      const { user_name, ...raw } = formData;
+      const userInputs = {};
+      const allFields = [
+        ...DISEASE_FIELDS[disease].required,
+        ...DISEASE_FIELDS[disease].optional,
+      ];
+      for (const f of allFields) {
+        if (f.name === "user_name") continue;
+        const val = raw[f.name];
+        if (val === undefined || val === "") continue;
+        if (f.type === "number") userInputs[f.name] = parseFloat(val);
+        else if (f.type === "select") {
+          const n = parseFloat(val);
+          userInputs[f.name] = isNaN(n) ? val : n;
+        } else userInputs[f.name] = val;
       }
 
-      const result = await response.json();
+      const res = await fetch(`${BACKEND_URL}/api/predictions/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", token },
+        body: JSON.stringify({
+          disease,
+          userInputs,
+          userSelectedPremium: isPremium,
+        }),
+      });
+      const data = await res.json();
 
-      const prob = Number(result.probability);
-
-      let finalRiskLevel = "Low Risk";
-      if (prob >= 80) finalRiskLevel = "High Risk";
-      else if (prob >= 50) finalRiskLevel = "Moderate Risk";
-      setRiskPercentage(`${prob}%`);
-      setRiskLevel(finalRiskLevel);
-      setRiskMessage(
-        result.risk === "YES"
-          ? "Consult a doctor for further evaluation."
-          : "Your health condition seems fine."
-      );
-      setPrediction(result.probability);
-
-      const userId = userData?._id || "guest";
-
-      const saveResponse = await fetch(
-        "https://predictacare-1.onrender.com/api/predictions/savePrediction",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            disease,
-            userId,
-            userInputs: formData,
-            predictionResult: finalRiskLevel,
-            probability: result.probability,
-          }),
+      if (!res.ok) {
+        if (res.status === 403 && data.upgradeRequired) {
+          toast.error("Monthly prediction limit reached — upgrade to Premium!");
+          return;
         }
-      );
-
-      if (!saveResponse.ok) {
-        const saveError = await saveResponse.json();
-        throw new Error(`Failed to save prediction data: ${saveError.message}`);
+        throw new Error(data.message || "Prediction failed");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setRiskMessage(
-        "Failed to get prediction or save data. Please try again."
-      );
+
+      setResult(data);
+      sessionStorage.setItem("pc_result", JSON.stringify(data));
+      sessionStorage.setItem("pc_disease", disease);
+      sessionStorage.setItem("pc_formData", JSON.stringify(formData));
+      toast.success("Prediction complete");
+
+      if (data.predictionsUsed !== undefined)
+        setLocalTrialUsed(data.predictionsUsed);
+      if (loadUserProfileData) loadUserProfileData();
+    } catch (err) {
+      toast.error(err.message || "Failed — please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAISuggestions = () => {
-    const diseaseLabelMap = {
-      diabetes: "Diabetes",
-      pcos: "Polycystic Ovary Syndrome (PCOS)",
-      heart: "Heart Disease",
-      stroke: "Stroke",
-    };
-
-    const readableDisease = diseaseLabelMap[disease] || disease;
-
-    const prompt = `The user has been diagnosed with ${riskLevel} of ${readableDisease}. Suggest the best daily health routine, dietary plan, necessary precautions, and what type of specialist doctor they should consult. Provide your advice in a structured and user-friendly format.`;
-
-    navigate("/ai-suggestions", {
-      state: { prompt },
-    });
-  };
-
-const NORMAL_VALUES = {
-  heart: {
-    age: { normal: "18–65", unit: "Years" },
-    trestbps: { normal: "90–120", unit: "mm Hg" },
-    chol: { normal: "< 200", unit: "mg/dL" },
-    fbs: { normal: "< 100", unit: "mg/dL" },
-    thalach: { normal: "60–100", unit: "bpm" },
-    oldpeak: { normal: "0–2", unit: "mm" },
-    cp: { normal: "0–1", unit: "Type" },
-    exang: { normal: "No", unit: "Yes/No" },
-    slope: { normal: "1–2", unit: "Index" },
-    ca: { normal: "0", unit: "Count" },
-    thal: { normal: "Normal", unit: "Type" },
-  },
-
-  diabetes: {
-    age: { normal: "18–60", unit: "Years" },
-    bmi: { normal: "18.5–24.9", unit: "kg/m²" },
-    HbA1c_level: { normal: "< 5.7", unit: "%" },
-    blood_glucose_level: { normal: "70–99", unit: "mg/dL" },
-    hypertension: { normal: "No", unit: "Yes/No" },
-    heart_disease: { normal: "No", unit: "Yes/No" },
-    smoking_history: { normal: "Never", unit: "Category" },
-  },
-
-  pcos: {
-    "Age (yrs)": { normal: "18–35", unit: "Years" },
-    BMI: { normal: "18.5–24.9", unit: "kg/m²" },
-    "AMH(ng/mL)": { normal: "1.0–5.0", unit: "ng/mL" },
-    "LH(mIU/mL)": { normal: "1.5–8.0", unit: "mIU/mL" },
-    "FSH(mIU/mL)": { normal: "3.5–12.5", unit: "mIU/mL" },
-    "FSH/LH": { normal: "1.0–2.0", unit: "Ratio" },
-    "Cycle length(days)": { normal: "21–35", unit: "Days" },
-    "Follicle No. (L)": { normal: "5–10", unit: "Count" },
-    "Follicle No. (R)": { normal: "5–10", unit: "Count" },
-    "Avg. F size (L) (mm)": { normal: "18–24", unit: "mm" },
-    "Avg. F size (R) (mm)": { normal: "18–24", unit: "mm" },
-    "TSH (mIU/L)": { normal: "0.5–4.5", unit: "mIU/L" },
-    "Endometrium (mm)": { normal: "7–14", unit: "mm" },
-    "PRL(ng/mL)": { normal: "5–25", unit: "ng/mL" },
-  },
-
-  stroke: {
-    Age: { normal: "18–65", unit: "Years" },
-    "High Blood Pressure": { normal: "No", unit: "Yes/No" },
-    "Chest Pain": { normal: "No", unit: "Yes/No" },
-    "Shortness of Breath": { normal: "No", unit: "Yes/No" },
-    "Irregular Heartbeat": { normal: "No", unit: "Yes/No" },
-    "Fatigue & Weakness": { normal: "No", unit: "Yes/No" },
-    "Dizziness": { normal: "No", unit: "Yes/No" },
-    "Swelling (Edema)": { normal: "No", unit: "Yes/No" },
-    "Excessive Sweating": { normal: "No", unit: "Yes/No" },
-    "Persistent Cough": { normal: "No", unit: "Yes/No" },
-    "Nausea/Vomiting": { normal: "No", unit: "Yes/No" },
-    "Chest Discomfort (Activity)": { normal: "No", unit: "Yes/No" },
-    "Cold Hands/Feet": { normal: "No", unit: "Yes/No" },
-    "Anxiety/Feeling of Doom": { normal: "No", unit: "Yes/No" },
-  },
-};
-
-const getNormalValue = (disease, fieldName) => {
-  return (
-    NORMAL_VALUES[disease]?.[fieldName] || {
-      normal: "--",
-      unit: "--",
-    }
-  );
-};
-
-
-  const handleDownloadCertificate = () => {
-    if (!disease || prediction === null) {
-      alert("Please complete the prediction first.");
-      return;
-    }
-
+  const handleDownload = () => {
+    if (!result) return;
     const doc = new jsPDF();
-
-    // Load Logo (Top Left, Resized to Maintain Aspect Ratio)
     const img = new Image();
     img.src = logo;
     img.onload = () => {
-      doc.addImage(img, "PNG", 10, 7, 70, 20); // Adjust width and height to avoid squeezing
-
-      // Contact Information (Adjusted Positioning)
-      doc.setFontSize(10);
-      doc.setTextColor(60, 60, 60);
-      doc.text("Email: adminPredictaCare@gmail.com", 140, 15);
-      doc.text("Phone: +91 9903469038", 140, 20);
-
-      // Title (Centered, Updated Text)
+      doc.addImage(img, "PNG", 10, 7, 65, 18);
+      doc.setFontSize(9);
+      doc.setTextColor(90, 90, 90);
+      doc.text("Email: adminPredictaCare@gmail.com", 140, 12);
+      doc.text("Phone: +91 9903469038", 140, 18);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(40, 40, 40);
-      doc.text("Prediction Certificate", 105, 40, { align: "center" });
-
-      // Disease Name (Centered)
-      doc.setFontSize(12);
-      doc.setTextColor(60, 60, 60);
-      doc.text(`Disease: ${disease.toUpperCase()}`, 105, 48, {
-        align: "center",
-      });
-
-      doc.line(15, 50, 195, 50);
-
-      // Date
-      doc.setFontSize(10);
-      const currentDate = new Date();
-      const dateString = currentDate.toLocaleDateString();
-      const timeString = currentDate.toLocaleTimeString();
-      doc.text(`Date: ${dateString}`, 160, 57);
-      doc.text(`Time: ${timeString}`, 160, 62);
-
-      doc.setFontSize(13);
-      doc.setFont("helvetica", "semi-bold");
-      const patientName = formData["user_name"] || "N/A";
-      doc.text(`Patient Name: ${patientName}`, 15, 57);
-      const patientAge = formData["age"] || "N/A"; // Get age from formData
-      doc.text(`Age: ${patientAge}`, 15, 62);
-      const patientSex = formData["gender"] || "N/A";
-      doc.text(`Sex: ${patientSex}`, 15, 67);
-
-      doc.line(15, 70, 195, 70);
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(40, 40, 40);
-      doc.text("Patient Report", 105, 85, { align: "center" });
-
-      // Patient Details Section
-      let yPos = 96;
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Parameter", 20, yPos);
-      doc.text("Normal Value", 78, yPos);
-      doc.text("Unit", 120, yPos);
-      doc.text("Patient Value", 148, yPos);
-      doc.text("Unit", 180, yPos);
-      doc.line(15, yPos + 5, 195, yPos + 5);
-      yPos += 10;
-
-      // Table Content
+      doc.setFontSize(18);
+      doc.setTextColor(20, 20, 20);
+      doc.text("Prediction Certificate", 105, 36, { align: "center" });
       doc.setFont("helvetica", "normal");
-      diseaseFields[disease]
-        .filter(
-          (field) =>
-            field.name !== "age" &&
-            field.name !== "gender" &&
-            field.name !== "sex" &&
-            field.name != "user_name"
-        ) // Exclude age and gender
-        .forEach((field) => {
-          let value = formData[field.name] || "N/A";
-          let normalInfo = getNormalValue(disease, field.name); 
-          let normalValue = normalInfo.normal;
-          let unit = normalInfo.unit;
-
-          if (field.type === "select") {
-            const selectedOption = field.options.find(
-              (opt) => opt.value == value
-            );
-            value = selectedOption ? selectedOption.label : value;
-          }
-          doc.text(field.label, 20, yPos);
-          doc.text(normalValue, 90, yPos, { align: "center" });
-          doc.text(unit, 125, yPos, { align: "center" });
-          doc.text(value, 160, yPos, { align: "center" });
-          doc.text(unit, 185, yPos, { align: "center" });
-          doc.line(15, yPos + 5, 195, yPos + 5);
-          yPos += 10;
-        });
-
-      // Set Table Position
-      const tableX = 30;
-      let tableY = yPos + 10;
-      const columnWidths = [80, 70]; // Column sizes for "Label" and "Value"
-      const rowHeight = 10;
-      const tableWidth = columnWidths.reduce((a, b) => a + b, 0);
-
-      // Table Header
-      doc.setFontSize(12);
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      doc.text(
+        `Condition: ${disease.toUpperCase()}   ·   Tier: ${(result.tier || "free").toUpperCase()}${result.isBeta ? "   ·   BETA" : ""}`,
+        105,
+        43,
+        { align: "center" },
+      );
+      doc.line(15, 48, 195, 48);
+      const now = new Date();
+      doc.setFontSize(9);
+      doc.text(`Patient: ${formData.user_name || "N/A"}`, 15, 55);
+      doc.text(
+        `Age: ${formData.age || formData["Age (yrs)"] || "N/A"}`,
+        15,
+        61,
+      );
+      doc.text(
+        `Date: ${now.toLocaleDateString()}  ${now.toLocaleTimeString()}`,
+        160,
+        55,
+        { align: "right" },
+      );
+      // blockchain tx hash on certificate
+      if (result.blockchain?.hash) {
+        doc.setFontSize(7);
+        doc.setTextColor(120, 120, 120);
+        doc.text(`Blockchain Hash: ${result.blockchain.hash}`, 15, 68);
+      }
+      doc.line(15, 71, 195, 71);
+      let y = 79;
       doc.setFont("helvetica", "bold");
-      doc.setFillColor(230, 230, 230); // Light gray background for header
-      doc.rect(tableX, tableY, tableWidth, rowHeight, "F");
-      doc.setTextColor(0, 0, 0);
-      doc.text("Prediction Result", tableX + tableWidth / 2, tableY + 7, {
-        align: "center",
-      });
-
-      // Table Border
-      doc.rect(tableX, tableY, tableWidth, rowHeight * 3);
-
-      // Risk Level Row
-      tableY += rowHeight;
+      doc.setFontSize(10);
+      doc.text("Parameter", 18, y);
+      doc.text("Normal", 90, y);
+      doc.text("Unit", 125, y);
+      doc.text("Value", 160, y);
+      doc.line(15, y + 3, 195, y + 3);
+      y += 9;
       doc.setFont("helvetica", "normal");
-      doc.text("Risk Level", tableX + 10, tableY + 7);
-      doc.setTextColor(...(prediction >= 50 ? [200, 0, 0] : [0, 150, 0])); // Red for high risk, Green for low
-      doc.text(riskLevel, tableX + columnWidths[0] + 10, tableY + 7);
-
-      // Probability Row
-      doc.setTextColor(0, 0, 0);
-      tableY += rowHeight;
-      doc.text("Probability", tableX + 10, tableY + 7);
-      doc.text(`${riskPercentage}`, tableX + columnWidths[0] + 15, tableY + 7);
-      // Footer Disclaimer
-      const pageWidth = doc.internal.pageSize.width; // Get page width
-      const pageHeight = doc.internal.pageSize.height; // Get page height
-
-      doc.setTextColor(40, 40, 40);
-      doc.line(15, pageHeight - 25, 195, pageHeight - 25); // Horizontal line above footer
-
+      doc.setFontSize(9);
+      const allF = [
+        ...DISEASE_FIELDS[disease].required,
+        ...DISEASE_FIELDS[disease].optional,
+      ].filter((f) => f.name !== "user_name");
+      for (const f of allF) {
+        let val = formData[f.name];
+        if (val === undefined || val === "") continue;
+        const norm = getNormal(disease, f.name);
+        if (f.type === "select") {
+          const opt = f.options?.find((o) => String(o.value) === String(val));
+          val = opt ? opt.label : val;
+        }
+        doc.text(f.label.substring(0, 30), 18, y);
+        doc.text(String(norm.normal), 90, y);
+        doc.text(String(norm.unit), 125, y);
+        doc.text(String(val), 160, y);
+        doc.line(15, y + 3, 195, y + 3);
+        y += 8;
+        if (y > 265) {
+          doc.addPage();
+          y = 20;
+        }
+      }
+      y += 6;
+      doc.setFillColor(240, 249, 248);
+      doc.rect(15, y, 180, 22, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Prediction Result", 105, y + 8, { align: "center" });
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
       doc.text(
-        "This is a computer-generated report. Please consult a doctor for further evaluation.",
-        pageWidth / 2, // Center horizontally
-        pageHeight - 15, // Position near bottom
-        { align: "center", maxWidth: 180 }
+        `Risk Level: ${result.risk}   ·   Probability: ${result.probability}%   ·   Model: ${result.tier}`,
+        105,
+        y + 16,
+        { align: "center" },
       );
-      // Save PDF
-      doc.save(`Prediction_${disease}_certificate.pdf`);
+      const ph = doc.internal.pageSize.height;
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.line(15, ph - 16, 195, ph - 16);
+      doc.text(
+        "AI screening tool only — not a medical diagnosis. Consult a qualified healthcare professional.",
+        105,
+        ph - 8,
+        { align: "center", maxWidth: 180 },
+      );
+      doc.save(`PredictaCare_${disease}_${result.tier}.pdf`);
     };
   };
 
+  const riskColor =
+    result?.risk === "HIGH"
+      ? "#dc2626"
+      : result?.risk === "MODERATE"
+        ? "#d97706"
+        : result?.risk === "LOW"
+          ? "#0d9488"
+          : "#94a3b8";
+  const info = disease ? MODEL_INFO[disease] : null;
+  const metrics = info ? (isPremium ? info.premium : info.free) : null;
+  const fields = disease ? DISEASE_FIELDS[disease] : null;
+
+  if (pageLoading) return <Preloader />;
+
   return (
     <>
-      {pageLoading ? (
-        <Preloader />
-      ) : (
-        <div className="mt-15 flex flex-col items-center p-8">
-          <div className="flex flex-col md:flex-row gap-8 max-w-7xl w-full bg-white rounded-3xl shadow-2xl p-10">
-            <div className="w-full md:w-1/2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 [&::-webkit-scrollbar]:hidden">
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Select Disease
-                </label>
-                <select
-                  className="block w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  onChange={(e) => setDisease(e.target.value)}
-                  value={disease}
-                >
-                  <option value="">Select</option>
-                  <option value="heart">Heart Disease</option>
-                  <option value="pcos">PCOS</option>
-                  <option value="diabetes">Diabetes</option>
-                  <option value="stroke">Stroke</option>
-                </select>
-              </div>
+      <AnimatePresence>
+        {showConsult && (
+          <ConsultModal
+            disease={disease}
+            onClose={() => setShowConsult(false)}
+          />
+        )}
+      </AnimatePresence>
 
-              {disease && (
-                <form className="grid grid-cols-1 gap-4">
-                  {diseaseFields[disease].map((field) => (
-                    <div key={field.name} className="flex flex-col">
-                      <label className="text-sm font-medium text-gray-700 mb-1">
-                        {field.label}
-                      </label>
-                      {field.type === "select" ? (
-                        <select
-                          name={field.name}
-                          value={formData[field.name] || ""}
-                          onChange={handleInputChange}
-                          className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                          <option value="">Select</option>
-                          {field.options.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
+      <UpgradeModal
+        isOpen={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        onSuccess={loadUserProfileData}
+      />
+
+      <div
+        className="min-h-screen px-4 sm:px-6 lg:px-8 py-8"
+        style={{
+          background: "hsl(210 20% 98%)",
+          fontFamily: "'Inter', sans-serif",
+        }}
+      >
+        <div className="max-w-7xl mx-auto">
+          {/* Page header */}
+          <motion.header
+            className="mb-8 flex items-start justify-between"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div>
+              <h1
+                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                className="text-4xl sm:text-5xl font-bold tracking-tight text-slate-800"
+              >
+                DIAGNO<span className="text-teal-600">AI</span>
+              </h1>
+              <p className="text-slate-400 mt-1 text-sm">
+                AI-powered disease risk assessment
+              </p>
+            </div>
+            <span
+              className={`mt-1 px-3 py-1 rounded-full text-xs font-semibold ${userIsPremium ? "bg-amber-100 text-amber-700" : "bg-teal-50 text-teal-700 border border-teal-100"}`}
+            >
+              {userIsPremium ? "✨ Premium" : "Free plan"}
+            </span>
+          </motion.header>
+
+          <div className="grid grid-cols-12 gap-6">
+            {/* LEFT — Input form */}
+            <motion.section
+              className="col-span-12 lg:col-span-7"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+            >
+              <div
+                className="bg-white rounded-2xl border border-slate-100 overflow-hidden"
+                style={{
+                  boxShadow:
+                    "0 1px 2px rgba(0,0,0,0.05), 0 6px 20px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h2
+                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                      className="font-semibold text-slate-800"
+                    >
+                      Input Factors
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Fill in the fields below to get your risk estimate
+                    </p>
+                  </div>
+                  {disease && (
+                    <div className="flex rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 ml-4">
+                      <button
+                        onClick={() => setIsPremium(false)}
+                        className={`px-3 py-1.5 text-xs font-semibold transition-colors ${!isPremium ? "bg-teal-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}
+                      >
+                        Free
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!canUsePremium) {
+                            setShowUpgrade(true);
+                            return;
+                          }
+                          setIsPremium(true);
+                        }}
+                        className={`px-3 py-1.5 text-xs font-semibold transition-colors ${isPremium ? "bg-amber-500 text-white" : canUsePremium ? "bg-white text-slate-500 hover:bg-slate-50" : "bg-white text-slate-300 cursor-not-allowed"}`}
+                      >
+                        Premium {!canUsePremium && "🔒"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6 space-y-5 max-h-[68vh] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Condition
+                    </label>
+                    <select
+                      value={disease}
+                      onChange={(e) => setDisease(e.target.value)}
+                      className="w-full h-10 px-3 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 hover:border-slate-300 transition-colors"
+                    >
+                      <option value="">Select a condition…</option>
+                      <option value="heart">Heart Disease</option>
+                      <option value="diabetes">Diabetes</option>
+                      <option value="pcos">PCOS</option>
+                      <option value="stroke">Stroke</option>
+                    </select>
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {disease && (
+                      <motion.div
+                        key={disease}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-5"
+                      >
+                        {info?.isBeta && (
+                          <div className="flex items-start gap-2.5 px-3.5 py-3 bg-amber-50 border border-amber-100 rounded-xl">
+                            <svg
+                              className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                              />
+                            </svg>
+                            <p className="text-xs text-amber-700 leading-relaxed">
+                              <strong>Beta model.</strong> Stroke prediction
+                              uses a limited dataset. Results are for awareness
+                              only — not for clinical use.
+                            </p>
+                          </div>
+                        )}
+
+                        {!userIsPremium && (
+                          <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                            <span>Free predictions this month</span>
+                            <span className="font-semibold text-slate-700">
+                              {result?.predictionsRemaining !== undefined ? (
+                                result.trialExhausted ? (
+                                  <button
+                                    onClick={() => setShowUpgrade(true)}
+                                    className="text-teal-600 font-semibold underline underline-offset-2"
+                                  >
+                                    Trial used — Upgrade for unlimited DNN
+                                  </button>
+                                ) : (
+                                  `${result.predictionsRemaining} premium trial predictions left`
+                                )
+                              ) : (
+                                "5 premium trial predictions"
+                              )}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {fields.required.map((f) => (
+                            <FieldInput
+                              key={f.name}
+                              field={f}
+                              value={formData[f.name]}
+                              onChange={handleChange}
+                            />
                           ))}
-                        </select>
+                        </div>
+
+                        {isPremium && fields.optional.length > 0 && (
+                          <div>
+                            <button
+                              onClick={() => setShowOptional(!showOptional)}
+                              className="w-full flex items-center justify-between h-10 px-4 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-xs font-semibold hover:bg-amber-100 transition-colors"
+                            >
+                              <span>
+                                {showOptional ? "Hide" : "Add"} lab results for
+                                higher accuracy
+                              </span>
+                              <svg
+                                className={`w-4 h-4 transition-transform duration-200 ${showOptional ? "rotate-180" : ""}`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+                            <AnimatePresence>
+                              {showOptional && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="overflow-hidden"
+                                >
+                                  <p className="text-xs text-slate-400 mt-3 mb-2">
+                                    Optional — leave blank to use population
+                                    medians
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {fields.optional.map((f) => (
+                                      <FieldInput
+                                        key={f.name}
+                                        field={f}
+                                        value={formData[f.name]}
+                                        onChange={handleChange}
+                                      />
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-slate-400 leading-relaxed">
+                          This tool provides AI-based screening only. It does
+                          not constitute a medical diagnosis. Always consult a
+                          qualified healthcare professional.
+                        </p>
+
+                        <button
+                          onClick={handlePredict}
+                          disabled={loading}
+                          className={`w-full h-11 text-sm font-semibold text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${loading ? "bg-slate-300 cursor-not-allowed" : isPremium ? "bg-amber-500 hover:bg-amber-600 focus:ring-amber-400" : "bg-teal-600 hover:bg-teal-700 focus:ring-teal-500"}`}
+                        >
+                          {loading ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <svg
+                                className="animate-spin h-4 w-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8v8z"
+                                />
+                              </svg>
+                              Analysing…
+                            </span>
+                          ) : (
+                            `Run ${isPremium ? "Premium" : "Free"} Prediction`
+                          )}
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* RIGHT — Results + Metrics */}
+            <motion.aside
+              className="col-span-12 lg:col-span-5 space-y-5"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <div
+                className="bg-white rounded-2xl border border-slate-100 p-6"
+                style={{
+                  boxShadow:
+                    "0 1px 2px rgba(0,0,0,0.05), 0 6px 20px rgba(0,0,0,0.04)",
+                }}
+                aria-live="polite"
+              >
+                <h2
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                  className="font-semibold text-slate-800 mb-5"
+                >
+                  Risk Assessment
+                </h2>
+
+                {loading ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-5">
+                      <Skeleton className="h-36 w-36 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-7 w-24" />
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-14 w-full rounded-xl" />
+                  </div>
+                ) : result ? (
+                  <motion.div
+                    key="result"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-5">
+                      <RiskGauge value={result.probability} risk={result.risk} />
+                      <div>
+                        <p
+                          className="text-3xl font-bold"
+                          style={{
+                            color: riskColor,
+                            fontFamily: "'Space Grotesk', sans-serif",
+                          }}
+                        >
+                          {result.risk}
+                        </p>
+                        <p className="text-sm text-slate-500 mt-0.5">
+                          Risk of {DISEASE_LABEL[disease]}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${result.tier === "premium" ? "bg-amber-100 text-amber-700" : "bg-teal-50 text-teal-700"}`}
+                          >
+                            {result.tier === "premium" ? "✨ Premium" : "Free"}
+                          </span>
+                          {result.isBeta && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold border border-amber-100">
+                              Beta
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`px-4 py-3 rounded-xl text-xs font-medium border leading-relaxed ${result.risk === "HIGH" ? "bg-red-50 border-red-100 text-red-700" : result.risk === "MODERATE" ? "bg-amber-50 border-amber-100 text-amber-700" : "bg-teal-50 border-teal-100 text-teal-700"}`}
+                    >
+                      {result.risk === "HIGH"
+                        ? "Elevated risk detected. We recommend consulting a specialist promptly for further evaluation."
+                        : result.risk === "MODERATE"
+                          ? "Moderate risk indicators present. Consider lifestyle adjustments and schedule a health checkup."
+                          : "Low risk indicators observed. Maintain healthy habits and continue with regular checkups."}
+                    </div>
+
+                    {result.predictionsRemaining !== undefined && (
+                      <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                        <span>Predictions used this month</span>
+                        <span
+                          className={`font-semibold ${result.predictionsRemaining <= 1 ? "text-red-500" : "text-slate-700"}`}
+                        >
+                          {result.predictionsUsed} / {result.predictionsLimit}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* ── Blockchain verification badge ── */}
+                    <BlockchainBadge
+                      predictionId={result.predictionId}
+                      blockchain={result.blockchain}
+                    />
+
+                    <div className="space-y-2.5 pt-1">
+                      <button
+                        onClick={handleDownload}
+                        className="w-full h-10 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
+                      >
+                        Download Certificate
+                      </button>
+                      <button
+                        onClick={() =>
+                          navigate("/ai-suggestions", {
+                            state: {
+                              prompt: `The user has ${result.risk} risk of ${DISEASE_LABEL[disease]}. Probability: ${result.probability}%. Suggest daily health routine, dietary plan, necessary precautions, and the specialist they should consult. Be structured and practical.`,
+                            },
+                          })
+                        }
+                        className="w-full h-10 text-sm font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition-colors"
+                      >
+                        View AI Suggestions
+                      </button>
+                      {isPremium ? (
+                        <button
+                          onClick={() => setShowConsult(true)}
+                          className="w-full h-10 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                          Consult a Doctor — ₹299
+                        </button>
                       ) : (
-                        <input
-                          type={field.type === "text" ? "text" : "number"}
-                          name={field.name}
-                          value={formData[field.name] || ""}
-                          onChange={handleInputChange}
-                          placeholder={field.label}
-                          className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
+                        <button
+                          onClick={() =>
+                            toast.info(
+                              "Switch to Premium mode to access doctor consultations",
+                            )
+                          }
+                          className="w-full h-10 text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                            />
+                          </svg>
+                          Consult a Doctor — Switch to Premium
+                        </button>
                       )}
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    className={`mt-4 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md transition ${
-                      loading
-                        ? "bg-gray-500 cursor-not-allowed"
-                        : "bg-blue-500 hover:bg-blue-600"
-                    }`}
-                    onClick={handlePrediction}
-                    disabled={loading}
-                  >
-                    {loading ? "Predicting..." : "Predict Disease Risk"}
-                  </button>
-                </form>
-              )}
-            </div>
-
-            <div className="w-full md:w-1/2 flex flex-col items-center justify-center">
-              <h3 className="text-xl font-semibold text-gray-700 mb-6">
-                Prediction Result
-              </h3>
-
-              <div className="w-64 h-64 flex items-center justify-center relative rounded-full shadow-lg bg-white">
-                {prediction !== null ? (
-                  <>
-                    <PieChart width={250} height={250}>
-                      <Pie
-                        data={[
-                          { name: "Risk", value: prediction },
-                          { name: "Safe", value: 100 - prediction },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={70}
-                        outerRadius={100}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        <Cell fill={getRiskColor(prediction)} />
-                        <Cell fill="#D1D5DB" />
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                    <div className="absolute flex flex-col items-center">
-                      <span
-                        className="text-4xl font-bold"
-                        style={{ color: getRiskColor(prediction) }}
-                      >
-                        {riskPercentage}
-                      </span>
-                      <span
-                        className="text-sm"
-                        style={{ color: getRiskColor(prediction) }}
-                      >
-                        {riskLevel}
-                      </span>
-                    </div>
-                  </>
+                  </motion.div>
                 ) : (
-                  <div className="flex flex-col justify-center items-center text-gray-400 text-center animate-pulse">
-                    <img className="m-0 p-0 h-8 w-8" src={assets.bot} alt="" />
-                    <p>Waiting for prediction...</p>
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-300 gap-3">
+                    <svg
+                      className="w-12 h-12"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    <p className="text-sm">Run a prediction to see results</p>
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={handleDownloadCertificate}
-                className={`mt-6 py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-green-500 hover:bg-green-600 transition ${
-                  prediction == null ? "cursor-not-allowed opacity-50" : ""
-                }`}
-                disabled={prediction == null}
-              >
-                Download Prediction Certificate
-              </button>
-
-              <p className="mt-6 text-gray-500 text-sm text-center">
-                {riskMessage}
-              </p>
-            </div>
+              {/* Model Metrics card */}
+              <AnimatePresence mode="wait">
+                {disease && (
+                  <motion.div
+                    key={`metrics-${disease}-${isPremium}`}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                    className="bg-white rounded-2xl border border-slate-100 p-6"
+                    style={{
+                      boxShadow:
+                        "0 1px 2px rgba(0,0,0,0.05), 0 6px 20px rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h2
+                        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                        className="font-semibold text-slate-800"
+                      >
+                        Model Metrics
+                      </h2>
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isPremium ? "bg-amber-100 text-amber-700" : "bg-teal-50 text-teal-700"}`}
+                      >
+                        {isPremium ? "Premium DNN" : "Free XGBoost"}
+                      </span>
+                    </div>
+                    <div className="space-y-3 mb-4">
+                      <MetricBar label="ROC-AUC" value={metrics.roc} />
+                      <MetricBar
+                        label="Recall (sensitivity)"
+                        value={metrics.recall}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-xs text-slate-400 mb-1">Data used</p>
+                        <p className="text-sm font-semibold text-slate-700">
+                          {metrics.label}
+                        </p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-3">
+                        <p className="text-xs text-slate-400 mb-1">
+                          Architecture
+                        </p>
+                        <p className="text-sm font-semibold text-slate-700">
+                          {metrics.model}
+                        </p>
+                      </div>
+                    </div>
+                    {!isPremium && !userIsPremium && (
+                      <div className="mt-3 flex items-start gap-2 px-3.5 py-3 bg-teal-50 border border-teal-100 rounded-xl">
+                        <svg
+                          className="w-4 h-4 text-teal-500 flex-shrink-0 mt-0.5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                          />
+                        </svg>
+                        <p className="text-xs text-teal-700 font-medium">
+                          {info.upsell}
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.aside>
           </div>
         </div>
-      )}
-
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={handleAISuggestions}
-          className={`py-3 px-6 text-white text-lg font-semibold rounded-lg shadow-md bg-purple-500 hover:bg-purple-600 transition ${
-            prediction == null ? "cursor-not-allowed opacity-50" : ""
-          }`}
-          disabled={prediction == null}
-        >
-          View AI Suggestions
-        </button>
       </div>
     </>
   );
-};
-
-export default Prediction;
+}

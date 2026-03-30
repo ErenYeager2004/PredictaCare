@@ -13,7 +13,9 @@ import Footer from './components/Footer';
 import Bot from './components/Bot';
 import Prediction from './pages/Prediction'
 import AiSuggestion from './pages/AiSuggestions'
+import Research from './pages/Research'                          // ← ADD
 import ProtectedRoute from "./components/ProtectedRoute";
+import MyPredictions from "./pages/MyPredictions";
 import {ToastContainer,toast} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,6 +37,8 @@ const App = () => {
         <Route path='/appointment/:docId' element={<Appointment />} />
         <Route path='/prediction' element={<ProtectedRoute><Prediction /></ProtectedRoute>} />
         <Route path='/ai-suggestions' element={<AiSuggestion />} />
+        <Route path="/my-predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
+        <Route path='/research' element={<Research />} />       {/* ← ADD */}
       </Routes>
       <Bot />
       <Footer />
