@@ -57,10 +57,10 @@ const Sidebar = () => {
             className={({ isActive }) =>
               `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${isActive ? 'bg-[#F2F3FF] border-r-4 border-[#5F6FFF]' : ''}`
             }
-            to="/review"
+            to="/research-orders"
           >
-            <img src={assets.review} alt="" />
-            <p className="hidden md:block">Prediction Review</p>
+            <img src={assets.people_icon} alt="" />
+            <p className="hidden md:block">Research Orders</p>
           </NavLink>
         </ul>
       )}
