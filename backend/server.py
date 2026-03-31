@@ -192,10 +192,9 @@ def get_risk_label(prob, threshold):
     Within 10% below      = MODERATE
     Below that            = LOW
     """
-    p = prob * 100
-    if p > 80:
+    if prob >= threshold:
         return "HIGH"
-    elif p > 50:
+    elif prob >= threshold * 0.9:
         return "MODERATE"
     else:
         return "LOW"
@@ -385,6 +384,10 @@ LITE_CATEGORICALS = {
 }
 
 
+# Numeric categoricals — frontend sends as floats (e.g. 2.0)
+# Must cast to int before get_dummies so columns are cp_2 not cp_2.0
+NUMERIC_CATEGORICALS = {"cp", "restecg", "slope", "thal", "Cycle(R/I)"}
+
 def preprocess_lite(disease, data):
     """
     XGBoost free tier — no scaling needed.
@@ -396,12 +399,14 @@ def preprocess_lite(disease, data):
     df = pd.DataFrame([data])
 
     if cat_cols:
-        # Convert categorical columns to int before get_dummies
-        # Frontend sends floats (e.g. 2.0) — get_dummies would create
-        # cp_2.0 instead of cp_2, breaking column alignment
         for col in cat_cols:
             if col in df.columns:
-                df[col] = df[col].astype(int)
+                if col in NUMERIC_CATEGORICALS:
+                    # Cast to int first so get_dummies creates cp_2 not cp_2.0
+                    df[col] = df[col].astype(int)
+                # String categoricals (gender, smoking_history, smoking_status)
+                # are already strings — get_dummies handles them directly
+
         df = pd.get_dummies(df, columns=cat_cols)
 
     # Fix boolean columns to float (newer pandas get_dummies returns bool)
