@@ -1340,7 +1340,10 @@ export default function Prediction() {
                     className="space-y-4"
                   >
                     <div className="flex items-center gap-5">
-                      <RiskGauge value={result.probability} risk={result.risk} />
+                      <RiskGauge
+                        value={result.probability}
+                        risk={result.risk}
+                      />
                       <div>
                         <p
                           className="text-3xl font-bold"
@@ -1408,6 +1411,9 @@ export default function Prediction() {
                           navigate("/ai-suggestions", {
                             state: {
                               prompt: `The user has ${result.risk} risk of ${DISEASE_LABEL[disease]}. Probability: ${result.probability}%. Suggest daily health routine, dietary plan, necessary precautions, and the specialist they should consult. Be structured and practical.`,
+                              disease: DISEASE_LABEL[disease],
+                              risk: result.risk,
+                              probability: result.probability,
                             },
                           })
                         }
