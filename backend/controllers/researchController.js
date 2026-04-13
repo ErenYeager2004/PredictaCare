@@ -2,6 +2,7 @@ import crypto from "crypto";
 import Razorpay from "razorpay";
 import Prediction from "../models/predictionModel.js";
 import ResearchOrder from "../models/researchModel.js";
+import { cache, TTL } from "../services/cacheService.js"
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -27,9 +28,13 @@ const calcAmount = (recordCount) => {
 // Public — shows dataset overview to attract researchers
 export const getDatasetStats = async (req, res) => {
   try {
-    const totalConsented = await Prediction.countDocuments({
-      consentGiven: true,
-    });
+    // Try cache first
+    const cached = await cache.get("research:stats");
+    if (cached) {
+      return res.json({ ...cached, fromCache: true });
+    }
+
+    const totalConsented = await Prediction.countDocuments({ consentGiven: true });
 
     const byDisease = await Prediction.aggregate([
       { $match: { consentGiven: true } },
@@ -51,23 +56,27 @@ export const getDatasetStats = async (req, res) => {
       blockchainTxHash: { $ne: null },
     });
 
-    return res.json({
+    const result = {
       success: true,
       stats: {
-        totalRecords: totalConsented,
+        totalRecords:      totalConsented,
         blockchainVerified,
-        byDisease: Object.fromEntries(byDisease.map((d) => [d._id, d.count])),
-        byRisk: Object.fromEntries(byRisk.map((d) => [d._id, d.count])),
-        byTier: Object.fromEntries(byTier.map((d) => [d._id, d.count])),
+        byDisease:         Object.fromEntries(byDisease.map(d => [d._id, d.count])),
+        byRisk:            Object.fromEntries(byRisk.map(d => [d._id, d.count])),
+        byTier:            Object.fromEntries(byTier.map(d => [d._id, d.count])),
         pricing: {
-          "100 records": "₹150",
-          "500 records": "₹600",
+          "100 records":  "₹150",
+          "500 records":  "₹600",
           "1000 records": "₹900",
           "5000 records": "₹3,000",
-          custom: "Contact us",
+          custom:         "Contact us",
         },
       },
-    });
+    };
+
+    // Cache for 1 hour
+    await cache.set("research:stats", result, TTL.RESEARCH_STATS);
+    return res.json(result);
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
@@ -77,23 +86,26 @@ export const getDatasetStats = async (req, res) => {
 // Returns 5 sample anonymised records so researchers can see the format
 export const getDataPreview = async (req, res) => {
   try {
+    const cached = await cache.get("research:preview");
+    if (cached) return res.json({ ...cached, fromCache: true });
+
     const samples = await Prediction.find({ consentGiven: true })
       .limit(5)
-      .select(
-        "-_id -userData.name -userData.email -userData.image -blockchainHash -blockchainTxHash",
-      );
+      .select("-_id -userData.name -userData.email -userData.image -blockchainHash -blockchainTxHash");
 
-    const anonymised = samples.map((p) => ({
-      disease: p.disease,
+    const anonymised = samples.map(p => ({
+      disease:          p.disease,
       predictionResult: p.predictionResult,
-      probability: p.probability,
-      tier: p.tier,
-      isBeta: p.isBeta,
-      inputs: p.userData?.inputs || {},
-      date: p.createdAt,
+      probability:      p.probability,
+      tier:             p.tier,
+      isBeta:           p.isBeta,
+      inputs:           p.userData?.inputs || {},
+      date:             p.createdAt,
     }));
 
-    return res.json({ success: true, preview: anonymised });
+    const result = { success: true, preview: anonymised };
+    await cache.set("research:preview", result, TTL.RESEARCH_PREVIEW);
+    return res.json(result);
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

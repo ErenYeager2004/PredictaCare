@@ -8,6 +8,7 @@ import {
 } from "../controllers/predictionController.js";
 import { buildPredictionHash, verifyPredictionOnChain, getPredictionFromChain } from "../services/blockchainService.js";
 import Prediction from "../models/predictionModel.js";
+import mongoose from "mongoose";
 
 const predictionRouter = express.Router();
 
@@ -80,6 +81,66 @@ predictionRouter.get("/verify/:predictionId", authUser, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * PATCH — Add public verify endpoint to predictionRoutes.js
+ * No auth required — anyone can verify a prediction
+ */
+
+// Add this route to predictionRoutes.js:
+
+predictionRouter.get("/public/:identifier", async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    let prediction = null;
+
+    // Detect if input is a MongoDB ObjectId or a blockchain hash
+    const isObjectId    = mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24;
+    const isBlockchainHash = identifier.startsWith("0x") && identifier.length === 66;
+
+    if (isObjectId) {
+      // Search by prediction ID
+      prediction = await Prediction.findById(identifier)
+        .select("-userData.name -userData.email -userData.image");
+    } else if (isBlockchainHash) {
+      // Search by blockchain hash
+      prediction = await Prediction.findOne({ blockchainHash: identifier })
+        .select("-userData.name -userData.email -userData.image");
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid input. Please enter a valid Prediction ID (24 characters) or Blockchain Hash (0x... 66 characters).",
+      });
+    }
+
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: isBlockchainHash
+          ? "No prediction found with this blockchain hash."
+          : "Prediction not found. Please check the ID and try again.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      prediction: {
+        _id:              prediction._id,
+        disease:          prediction.disease,
+        predictionResult: prediction.predictionResult,
+        probability:      prediction.probability,
+        tier:             prediction.tier,
+        isBeta:           prediction.isBeta,
+        blockchainHash:   prediction.blockchainHash,
+        blockchainTxHash: prediction.blockchainTxHash,
+        blockNumber:      prediction.blockNumber,
+        createdAt:        prediction.createdAt,
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
   }
 });
 
