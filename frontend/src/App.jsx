@@ -18,6 +18,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import MyPredictions from "./pages/MyPredictions";
 import {ToastContainer,toast} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import VerifyPrediction from './pages/VerifyPrediction';
 
 
 const App = () => {
@@ -39,6 +40,7 @@ const App = () => {
         <Route path='/ai-suggestions' element={<AiSuggestion />} />
         <Route path="/my-predictions" element={<ProtectedRoute><MyPredictions /></ProtectedRoute>} />
         <Route path='/research' element={<Research />} />       {/* ← ADD */}
+        <Route path="/verify" element={<VerifyPrediction />} />
       </Routes>
       <Bot />
       <Footer />
