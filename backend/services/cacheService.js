@@ -15,13 +15,15 @@ let connected = false;
 const init = () => {
   if (client) return;
   try {
+    const isUpstash = !!process.env.REDIS_PASSWORD;
     client = new Redis({
-      host:           process.env.REDIS_HOST || "127.0.0.1",
-      port:           parseInt(process.env.REDIS_PORT || "6379"),
-      password:       process.env.REDIS_PASSWORD || undefined,
-      lazyConnect:    true,
+      host: process.env.REDIS_HOST || "127.0.0.1",
+      port: parseInt(process.env.REDIS_PORT || "6379"),
+      password: process.env.REDIS_PASSWORD || undefined,
+      tls: isUpstash ? {} : undefined, // TLS required for Upstash
+      lazyConnect: true,
       retryStrategy: (times) => {
-        if (times > 3) return null; // stop retrying after 3 attempts
+        if (times > 3) return null;
         return Math.min(times * 200, 1000);
       },
       enableOfflineQueue: false,
@@ -38,7 +40,9 @@ const init = () => {
     });
 
     client.connect().catch(() => {
-      console.warn("⚠️  Redis not available — caching disabled (app works normally)");
+      console.warn(
+        "⚠️  Redis not available — caching disabled (app works normally)",
+      );
     });
   } catch {
     console.warn("⚠️  Redis init failed — caching disabled");
@@ -101,11 +105,11 @@ export const cache = {
 
 // TTL constants (seconds)
 export const TTL = {
-  RESEARCH_STATS:   60 * 60,       // 1 hour
-  RESEARCH_PREVIEW: 60 * 60 * 6,   // 6 hours
-  DOCTOR_LIST:      60 * 30,        // 30 minutes
-  PREDICTION_HIST:  60 * 2,         // 2 minutes
-  VERIFY:           60 * 5,         // 5 minutes
+  RESEARCH_STATS: 60 * 60, // 1 hour
+  RESEARCH_PREVIEW: 60 * 60 * 6, // 6 hours
+  DOCTOR_LIST: 60 * 30, // 30 minutes
+  PREDICTION_HIST: 60 * 2, // 2 minutes
+  VERIFY: 60 * 5, // 5 minutes
 };
 
 init();
