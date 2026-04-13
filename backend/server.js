@@ -66,7 +66,7 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "https://checkout.razorpay.com", "https://rzp.io"],
+      scriptSrc:   ["'self'","'unsafe-eval'",  "https://checkout.razorpay.com", "https://rzp.io"],
       frameSrc:    ["'self'", "'unsafe-eval'", "https://api.razorpay.com", "https://rzp.io"],
       imgSrc:      ["'self'", "data:", "https://res.cloudinary.com"],
       connectSrc:  [
