@@ -68,7 +68,7 @@ app.use(
       defaultSrc:  ["'self'"],
       scriptSrc:   ["'self'","'unsafe-eval'",  "https://checkout.razorpay.com", "https://rzp.io", "https://cdn.razorpay.com"],
       frameSrc:    ["'self'", "'unsafe-eval'", "https://api.razorpay.com", "https://rzp.io"],
-      imgSrc:      ["'self'", "data:", "https://cdn.pixabay.com" , "https://res.cloudinary.com", "https://cdn.razorpay.com"],
+      imgSrc:      ["'self'", "blob:", "data:", "https://cdn.pixabay.com" , "https://res.cloudinary.com", "https://cdn.razorpay.com"],
       connectSrc:  [
         "'self'",
         "https://api.razorpay.com",
