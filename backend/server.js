@@ -66,9 +66,9 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'","'unsafe-eval'",  "https://checkout.razorpay.com", "https://rzp.io"],
+      scriptSrc:   ["'self'","'unsafe-eval'",  "https://checkout.razorpay.com", "https://rzp.io", "https://cdn.razorpay.com"],
       frameSrc:    ["'self'", "'unsafe-eval'", "https://api.razorpay.com", "https://rzp.io"],
-      imgSrc:      ["'self'", "data:", "https://res.cloudinary.com"],
+      imgSrc:      ["'self'", "data:", "https://cdn.pixabay.com" , "https://res.cloudinary.com", "https://cdn.razorpay.com"],
       connectSrc:  [
         "'self'",
         "https://api.razorpay.com",
@@ -77,6 +77,7 @@ app.use(
         "https://eth-sepolia.g.alchemy.com",  // ← Alchemy RPC
         "wss://eth-sepolia.g.alchemy.com",    // ← WebSocket
         "http://localhost:5000",
+        "https://cdn.razorpay.com",
       ],
       styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc:     ["'self'", "https://fonts.gstatic.com"],
