@@ -6,16 +6,20 @@ import {
   getPredictionsRemaining,
   savePrediction,
 } from "../controllers/predictionController.js";
-import { buildPredictionHash, verifyPredictionOnChain, getPredictionFromChain } from "../services/blockchainService.js";
+import {
+  buildPredictionHash,
+  verifyPredictionOnChain,
+  getPredictionFromChain,
+} from "../services/blockchainService.js";
 import Prediction from "../models/predictionModel.js";
 import mongoose from "mongoose";
 
 const predictionRouter = express.Router();
 
-predictionRouter.post("/predict",          authUser, predict);
-predictionRouter.get("/history",           authUser, getPredictionHistory);
-predictionRouter.get("/remaining",         authUser, getPredictionsRemaining);
-predictionRouter.post("/savePrediction",   authUser, savePrediction);
+predictionRouter.post("/predict", authUser, predict);
+predictionRouter.get("/history", authUser, getPredictionHistory);
+predictionRouter.get("/remaining", authUser, getPredictionsRemaining);
+predictionRouter.post("/savePrediction", authUser, savePrediction);
 
 // ── Blockchain verification ────────────────────────────────────────────────
 predictionRouter.get("/verify/:predictionId", authUser, async (req, res) => {
@@ -24,32 +28,37 @@ predictionRouter.get("/verify/:predictionId", authUser, async (req, res) => {
 
     const prediction = await Prediction.findById(predictionId);
     if (!prediction) {
-      return res.status(404).json({ success: false, message: "Prediction not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prediction not found" });
     }
 
     if (!prediction.blockchainTxHash) {
       return res.json({
-        success:  true,
+        success: true,
         verified: false,
-        message:  "No blockchain record yet — may still be confirming",
+        message: "No blockchain record yet — may still be confirming",
       });
     }
 
     // ── Recompute hash using same fields as when it was originally built ────
     // Must match exactly what predictionController used when storing on chain:
     // userId = MongoDB _id of user (looked up via email)
-    const user = await (await import("../models/userModel.js")).default
-      .findOne({ email: prediction.userData?.email });
-    const userId = user ? user._id.toString() : prediction.userData?.email || "";
+    const user = await (
+      await import("../models/userModel.js")
+    ).default.findOne({ email: prediction.userData?.email });
+    const userId = user
+      ? user._id.toString()
+      : prediction.userData?.email || "";
 
     const recomputedHash = buildPredictionHash({
-      predictionId:     prediction._id.toString(),
+      predictionId: prediction._id.toString(),
       userId,
-      disease:          prediction.disease,
+      disease: prediction.disease,
       predictionResult: prediction.predictionResult,
-      probability:      prediction.probability,
-      tier:             prediction.tier,
-      createdAt:        prediction.createdAt.toISOString(),
+      probability: prediction.probability,
+      tier: prediction.tier,
+      createdAt: prediction.createdAt.toISOString(),
     });
 
     const onChain = await verifyPredictionOnChain(predictionId, recomputedHash);
@@ -57,11 +66,12 @@ predictionRouter.get("/verify/:predictionId", authUser, async (req, res) => {
     // Hash mismatch — tampered
     if (!onChain.valid) {
       return res.json({
-        success:        true,
-        verified:       false,
-        tampered:       true,
-        message:        "⚠️ Data mismatch — this prediction may have been tampered with",
-        storedHash:     prediction.blockchainHash,
+        success: true,
+        verified: false,
+        tampered: true,
+        message:
+          "⚠️ Data mismatch — this prediction may have been tampered with",
+        storedHash: prediction.blockchainHash,
         recomputedHash,
       });
     }
@@ -70,12 +80,12 @@ predictionRouter.get("/verify/:predictionId", authUser, async (req, res) => {
     const record = await getPredictionFromChain(predictionId);
 
     return res.json({
-      success:      true,
-      verified:     true,
-      timestamp:    onChain.timestamp,
-      txHash:       prediction.blockchainTxHash,
-      blockNumber:  prediction.blockNumber,
-      storedBy:     record?.storedBy,
+      success: true,
+      verified: true,
+      timestamp: onChain.timestamp,
+      txHash: prediction.blockchainTxHash,
+      blockNumber: prediction.blockNumber,
+      storedBy: record?.storedBy,
       etherscanUrl: `https://sepolia.etherscan.io/tx/${prediction.blockchainTxHash}`,
     });
   } catch (err) {
@@ -97,21 +107,26 @@ predictionRouter.get("/public/:identifier", async (req, res) => {
     let prediction = null;
 
     // Detect if input is a MongoDB ObjectId or a blockchain hash
-    const isObjectId    = mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24;
-    const isBlockchainHash = identifier.startsWith("0x") && identifier.length === 66;
+    const isObjectId =
+      mongoose.Types.ObjectId.isValid(identifier) && identifier.length === 24;
+    const isBlockchainHash =
+      identifier.startsWith("0x") && identifier.length === 66;
 
     if (isObjectId) {
       // Search by prediction ID
-      prediction = await Prediction.findById(identifier)
-        .select("-userData.name -userData.email -userData.image");
+      prediction = await Prediction.findById(identifier).select(
+        "-userData.name -userData.email -userData.image",
+      );
     } else if (isBlockchainHash) {
       // Search by blockchain hash
-      prediction = await Prediction.findOne({ blockchainHash: identifier })
-        .select("-userData.name -userData.email -userData.image");
+      prediction = await Prediction.findOne({
+        blockchainHash: identifier,
+      }).select("-userData.name -userData.email -userData.image");
     } else {
       return res.status(400).json({
         success: false,
-        message: "Invalid input. Please enter a valid Prediction ID (24 characters) or Blockchain Hash (0x... 66 characters).",
+        message:
+          "Invalid input. Please enter a valid Prediction ID (24 characters) or Blockchain Hash (0x... 66 characters).",
       });
     }
 
@@ -127,16 +142,16 @@ predictionRouter.get("/public/:identifier", async (req, res) => {
     return res.json({
       success: true,
       prediction: {
-        _id:              prediction._id,
-        disease:          prediction.disease,
+        _id: prediction._id,
+        disease: prediction.disease,
         predictionResult: prediction.predictionResult,
-        probability:      prediction.probability,
-        tier:             prediction.tier,
-        isBeta:           prediction.isBeta,
-        blockchainHash:   prediction.blockchainHash,
+        probability: prediction.probability,
+        tier: prediction.tier,
+        isBeta: prediction.isBeta,
+        blockchainHash: prediction.blockchainHash,
         blockchainTxHash: prediction.blockchainTxHash,
-        blockNumber:      prediction.blockNumber,
-        createdAt:        prediction.createdAt,
+        blockNumber: prediction.blockNumber,
+        createdAt: prediction.createdAt,
       },
     });
   } catch (err) {

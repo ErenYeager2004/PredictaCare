@@ -77,6 +77,7 @@ app.use(
         "https://eth-sepolia.g.alchemy.com",  // ← Alchemy RPC
         "wss://eth-sepolia.g.alchemy.com",    // ← WebSocket
         "http://localhost:5000",
+        "https://prediction-model-ydf5.onrender.com",
         "https://cdn.razorpay.com",
       ],
       styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
