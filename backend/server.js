@@ -66,16 +66,23 @@ app.use(
   helmet.contentSecurityPolicy({
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "https://checkout.razorpay.com", "https://rzp.io"],
-      frameSrc:    ["'self'", "https://api.razorpay.com", "https://rzp.io"],
-      imgSrc:      ["'self'", "data:", "https://res.cloudinary.com"],
+      scriptSrc:   ["'self'","'unsafe-eval'",  "https://checkout.razorpay.com", "https://rzp.io", "https://cdn.razorpay.com"],
+      frameSrc:    ["'self'", "'unsafe-eval'", "https://api.razorpay.com", "https://rzp.io"],
+      imgSrc:      ["'self'", "blob:", "data:", "https://cdn.pixabay.com" , "https://res.cloudinary.com", "https://cdn.razorpay.com"],
       connectSrc:  [
         "'self'",
         "https://api.razorpay.com",
         "https://lumberjack.razorpay.com",
         "https://predictacare-1.onrender.com",
+        "https://eth-sepolia.g.alchemy.com",  // ← Alchemy RPC
+        "wss://eth-sepolia.g.alchemy.com",    // ← WebSocket
         "http://localhost:5000",
+        "https://prediction-model-ydf5.onrender.com",
+        "https://cdn.razorpay.com",
       ],
+      styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc:     ["'self'", "https://fonts.gstatic.com"],
+      workerSrc:   ["'self'", "blob:"],       // ← needed by ethers.js
     },
   })
 );

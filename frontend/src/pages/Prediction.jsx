@@ -7,6 +7,8 @@ import jsPDF from "jspdf";
 import logo from "../assets/logo.png";
 import UpgradeModal from "../components/UpgradeModal";
 import BlockchainBadge from "../components/BlockchainBadge";
+import PredictionSkeleton from "../components/PredictionSkeleton";
+import OnboardingTour from "../components/OnboardingTour";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    FONT INJECTION — Space Grotesk (headings) + Inter (body)
@@ -1031,6 +1033,7 @@ export default function Prediction() {
         onClose={() => setShowUpgrade(false)}
         onSuccess={loadUserProfileData}
       />
+      <OnboardingTour />
 
       <div
         className="min-h-screen px-4 sm:px-6 lg:px-8 py-8"
@@ -1093,7 +1096,10 @@ export default function Prediction() {
                     </p>
                   </div>
                   {disease && (
-                    <div className="flex rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 ml-4">
+                    <div
+                      id="tier-toggle"
+                      className="flex rounded-lg overflow-hidden border border-slate-200 flex-shrink-0 ml-4"
+                    >
                       <button
                         onClick={() => setIsPremium(false)}
                         className={`px-3 py-1.5 text-xs font-semibold transition-colors ${!isPremium ? "bg-teal-600 text-white" : "bg-white text-slate-500 hover:bg-slate-50"}`}
@@ -1116,12 +1122,16 @@ export default function Prediction() {
                   )}
                 </div>
 
-                <div className="p-6 space-y-5 max-h-[68vh] overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                <div
+                  id="input-form"
+                  className="p-6 space-y-5 max-h-[68vh] overflow-y-auto [&::-webkit-scrollbar]:hidden"
+                >
                   <div className="space-y-1">
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Condition
                     </label>
                     <select
+                      id="condition-select"
                       value={disease}
                       onChange={(e) => setDisease(e.target.value)}
                       className="w-full h-10 px-3 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400 hover:border-slate-300 transition-colors"
@@ -1259,6 +1269,7 @@ export default function Prediction() {
                         </p>
 
                         <button
+                          id="predict-btn"
                           onClick={handlePredict}
                           disabled={loading}
                           className={`w-full h-11 text-sm font-semibold text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${loading ? "bg-slate-300 cursor-not-allowed" : isPremium ? "bg-amber-500 hover:bg-amber-600 focus:ring-amber-400" : "bg-teal-600 hover:bg-teal-700 focus:ring-teal-500"}`}
@@ -1320,17 +1331,7 @@ export default function Prediction() {
                 </h2>
 
                 {loading ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-5">
-                      <Skeleton className="h-36 w-36 rounded-full" />
-                      <div className="flex-1 space-y-2">
-                        <Skeleton className="h-7 w-24" />
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-5 w-20 rounded-full" />
-                      </div>
-                    </div>
-                    <Skeleton className="h-14 w-full rounded-xl" />
-                  </div>
+                  <PredictionSkeleton />
                 ) : result ? (
                   <motion.div
                     key="result"

@@ -1,17 +1,20 @@
 import Prediction from "../models/predictionModel.js";
 import User from "../models/userModel.js";
 import fetch from "node-fetch";
-import { buildPredictionHash, storePredictionOnChain } from "../services/blockchainService.js";
+import {
+  buildPredictionHash,
+  storePredictionOnChain,
+} from "../services/blockchainService.js";
 
-const FLASK_URL        = process.env.FLASK_URL || "http://localhost:5000";
-const INTERNAL_SECRET  = process.env.INTERNAL_SECRET || "";
+const FLASK_URL = process.env.FLASK_URL || "http://localhost:5000";
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || "";
 
 // --- Helper: Call Flask ML Server ---------------------------------------------
 const callFlask = async (disease, inputData, isPremium) => {
   const response = await fetch(`${FLASK_URL}/predict/${disease}`, {
-    method:  "POST",
+    method: "POST",
     headers: {
-      "Content-Type":     "application/json",
+      "Content-Type": "application/json",
       "X-Internal-Secret": INTERNAL_SECRET,
     },
     body: JSON.stringify({ ...inputData, isPremium }),
@@ -50,28 +53,29 @@ export const predict = async (req, res) => {
       user.subscriptionExpiry > now;
 
     if (!isPaidPremium) {
-      const lastReset  = user.lastPredictionReset;
-      const isNewMonth = !lastReset ||
-        lastReset.getMonth()    !== now.getMonth() ||
+      const lastReset = user.lastPredictionReset;
+      const isNewMonth =
+        !lastReset ||
+        lastReset.getMonth() !== now.getMonth() ||
         lastReset.getFullYear() !== now.getFullYear();
 
       if (isNewMonth) {
         await User.findByIdAndUpdate(userId, {
-          predictionsUsed:     0,
+          predictionsUsed: 0,
           lastPredictionReset: now,
         });
         user.predictionsUsed = 0;
       }
     }
 
-    const trialUsed    = user.predictionsUsed  || 0;
-    const trialLimit   = user.predictionsLimit || 5;
+    const trialUsed = user.predictionsUsed || 0;
+    const trialLimit = user.predictionsLimit || 5;
     const hasTrialLeft = trialUsed < trialLimit;
 
     // Respect what the user manually selected in the UI
     // userSelectedPremium=false means they clicked "Free" — use XGBoost regardless
     const wantsPremium = userSelectedPremium !== false; // default true if not sent
-    const isPremium    = wantsPremium && (isPaidPremium || hasTrialLeft);
+    const isPremium = wantsPremium && (isPaidPremium || hasTrialLeft);
 
     // Only consume trial if user actually ran premium (DNN)
     const shouldConsumeTrial = isPremium && !isPaidPremium && hasTrialLeft;
@@ -85,16 +89,16 @@ export const predict = async (req, res) => {
     const newPrediction = new Prediction({
       disease,
       userData: {
-        name:   user.name  || "Unknown",
-        dob:    user.dob   || "N/A",
-        image:  user.image || "",
-        email:  user.email || "",
+        name: user.name || "Unknown",
+        dob: user.dob || "N/A",
+        image: user.image || "",
+        email: user.email || "",
         inputs: userInputs,
       },
       predictionResult: flaskResult.risk,
-      probability:      flaskResult.probability,
-      tier:             flaskResult.tier,
-      isBeta:           flaskResult.isBeta || false,
+      probability: flaskResult.probability,
+      tier: flaskResult.tier,
+      isBeta: flaskResult.isBeta || false,
     });
 
     const saved = await newPrediction.save();
@@ -103,23 +107,23 @@ export const predict = async (req, res) => {
     let blockchainData = null;
     try {
       const hashHex = buildPredictionHash({
-        predictionId:     saved._id.toString(),
-        userId:           userId.toString(),
+        predictionId: saved._id.toString(),
+        userId: userId.toString(),
         disease,
         predictionResult: flaskResult.risk,
-        probability:      flaskResult.probability,
-        tier:             isPremium ? "premium" : "free",
-        createdAt:        saved.createdAt.toISOString(),
+        probability: flaskResult.probability,
+        tier: isPremium ? "premium" : "free",
+        createdAt: saved.createdAt.toISOString(),
       });
 
       // Fire-and-forget — don't await, never blocks the response
       storePredictionOnChain(saved._id.toString(), hashHex)
-        .then(onChain => {
+        .then((onChain) => {
           if (onChain) {
             Prediction.findByIdAndUpdate(saved._id, {
               blockchainTxHash: onChain.txHash,
-              blockchainHash:   hashHex,
-              blockNumber:      onChain.blockNumber,
+              blockchainHash: hashHex,
+              blockNumber: onChain.blockNumber,
             }).catch(() => {});
           }
         })
@@ -132,29 +136,42 @@ export const predict = async (req, res) => {
     // ─────────────────────────────────────────────────────────────────────────
 
     return res.status(201).json({
-      message:         "Prediction complete",
-      predictionId:    saved._id,
-      disease:         saved.disease,
-      risk:            flaskResult.risk,
-      probability:     flaskResult.probability,
-      tier:            flaskResult.tier,
-      displayTier:     isPaidPremium ? "premium" : (isPremium && hasTrialLeft) ? "trial" : "free",
-      isBeta:          flaskResult.isBeta || false,
-      blockchain:      blockchainData,
+      message: "Prediction complete",
+      predictionId: saved._id,
+      disease: saved.disease,
+      risk: flaskResult.risk,
+      probability: flaskResult.probability,
+      tier: flaskResult.tier,
+      displayTier: isPaidPremium
+        ? "premium"
+        : isPremium && hasTrialLeft
+          ? "trial"
+          : "free",
+      isBeta: flaskResult.isBeta || false,
+      blockchain: blockchainData,
       ...(!isPaidPremium && {
-        predictionsUsed:      hasTrialLeft ? trialUsed + 1 : trialUsed,
-        predictionsLimit:     trialLimit,
-        predictionsRemaining: Math.max(0, trialLimit - (hasTrialLeft ? trialUsed + 1 : trialUsed)),
-        trialExhausted:       !hasTrialLeft,
+        predictionsUsed: hasTrialLeft ? trialUsed + 1 : trialUsed,
+        predictionsLimit: trialLimit,
+        predictionsRemaining: Math.max(
+          0,
+          trialLimit - (hasTrialLeft ? trialUsed + 1 : trialUsed),
+        ),
+        trialExhausted: !hasTrialLeft,
       }),
     });
-
   } catch (error) {
     console.error(`[Prediction Error] ${disease}:`, error.message);
 
-    if (error.message.includes("fetch") || error.message.includes("ECONNREFUSED")) {
+    if (
+      error.message.includes("fetch") ||
+      error.message.includes("ECONNREFUSED") ||
+      error.message.includes("unavailable") || // ← catches Flask 503
+      error.message.includes("Flask error: 503") || // ← catches status code
+      error.message.includes("Flask error: 502")
+    ) {
       return res.status(503).json({
-        message: "ML service is temporarily unavailable. Please try again shortly."
+        message:
+          "ML service is temporarily unavailable. Please try again shortly.",
       });
     }
     if (error.message.includes("Missing")) {
@@ -170,8 +187,9 @@ export const getPredictionHistory = async (req, res) => {
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
-    const predictions = await Prediction.find({ "userData.email": user.email })
-      .sort({ createdAt: -1 });
+    const predictions = await Prediction.find({
+      "userData.email": user.email,
+    }).sort({ createdAt: -1 });
     return res.status(200).json(predictions);
   } catch (error) {
     console.error("Error fetching history:", error.message);
@@ -186,26 +204,26 @@ export const getPredictionsRemaining = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const now       = new Date();
-    const isPremium = (
+    const now = new Date();
+    const isPremium =
       user.subscription === "premium" &&
       user.subscriptionExpiry &&
-      user.subscriptionExpiry > now
-    );
+      user.subscriptionExpiry > now;
 
     if (isPremium) {
       return res.status(200).json({
-        tier:               "premium",
-        unlimited:          true,
+        tier: "premium",
+        unlimited: true,
         subscriptionExpiry: user.subscriptionExpiry,
       });
     }
 
     return res.status(200).json({
-      tier:                 "free",
-      predictionsUsed:      user.predictionsUsed || 0,
-      predictionsLimit:     user.predictionsLimit || 5,
-      predictionsRemaining: (user.predictionsLimit || 5) - (user.predictionsUsed || 0),
+      tier: "free",
+      predictionsUsed: user.predictionsUsed || 0,
+      predictionsLimit: user.predictionsLimit || 5,
+      predictionsRemaining:
+        (user.predictionsLimit || 5) - (user.predictionsUsed || 0),
     });
   } catch (error) {
     return res.status(500).json({ message: `Server error: ${error.message}` });
@@ -217,7 +235,12 @@ export const savePrediction = async (req, res) => {
   const { disease, userInputs, predictionResult, probability } = req.body;
   const userId = req.body.userId;
 
-  if (!disease || !userInputs || !predictionResult || typeof probability !== "number") {
+  if (
+    !disease ||
+    !userInputs ||
+    !predictionResult ||
+    typeof probability !== "number"
+  ) {
     return res.status(400).json({ message: "Incomplete or invalid data" });
   }
 
@@ -228,10 +251,10 @@ export const savePrediction = async (req, res) => {
     const newPrediction = new Prediction({
       disease,
       userData: {
-        name:   user.name  || "Unknown",
-        dob:    user.dob   || "N/A",
-        image:  user.image || "",
-        email:  user.email || "",
+        name: user.name || "Unknown",
+        dob: user.dob || "N/A",
+        image: user.image || "",
+        email: user.email || "",
         inputs: userInputs,
       },
       predictionResult,
@@ -240,11 +263,11 @@ export const savePrediction = async (req, res) => {
 
     const saved = await newPrediction.save();
     return res.status(201).json({
-      message:      "Prediction saved",
+      message: "Prediction saved",
       predictionId: saved._id,
-      disease:      saved.disease,
-      result:       saved.predictionResult,
-      probability:  saved.probability,
+      disease: saved.disease,
+      result: saved.predictionResult,
+      probability: saved.probability,
     });
   } catch (error) {
     return res.status(500).json({ message: `Server error: ${error.message}` });
@@ -258,7 +281,9 @@ export const verifyPrediction = async (req, res) => {
   try {
     const prediction = await Prediction.findById(predictionId);
     if (!prediction) {
-      return res.status(404).json({ success: false, message: "Prediction not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Prediction not found" });
     }
 
     // No blockchain data stored yet
@@ -271,18 +296,17 @@ export const verifyPrediction = async (req, res) => {
     // is stored on the Ethereum blockchain
     const recomputedHash = buildPredictionHash({
       predictionId: prediction._id.toString(),
-      userId:       prediction.userData?.email || "",
-      disease:      prediction.disease,
+      userId: prediction.userData?.email || "",
+      disease: prediction.disease,
       predictionResult: prediction.predictionResult,
-      probability:  prediction.probability,
-      tier:         prediction.tier,
-      createdAt:    prediction.createdAt.toISOString(),
+      probability: prediction.probability,
+      tier: prediction.tier,
+      createdAt: prediction.createdAt.toISOString(),
     });
 
     // ── Compare recomputed hash against what's on Ethereum ───────────────────
-    const { verifyPredictionOnChain, getPredictionFromChain } = await import(
-      "../services/blockchainService.js"
-    );
+    const { verifyPredictionOnChain, getPredictionFromChain } =
+      await import("../services/blockchainService.js");
 
     const onChain = await verifyPredictionOnChain(
       prediction._id.toString(),
@@ -295,8 +319,9 @@ export const verifyPrediction = async (req, res) => {
         success: true,
         verified: false,
         tampered: true,
-        message: "⚠️ Data mismatch — this prediction may have been tampered with",
-        storedHash:      prediction.blockchainHash,
+        message:
+          "⚠️ Data mismatch — this prediction may have been tampered with",
+        storedHash: prediction.blockchainHash,
         recomputedHash,
       });
     }
@@ -305,12 +330,12 @@ export const verifyPrediction = async (req, res) => {
     const chainData = await getPredictionFromChain(prediction._id.toString());
 
     return res.json({
-      success:     true,
-      verified:    true,
-      timestamp:   onChain.timestamp,
-      txHash:      prediction.blockchainTxHash,
+      success: true,
+      verified: true,
+      timestamp: onChain.timestamp,
+      txHash: prediction.blockchainTxHash,
       blockNumber: prediction.blockNumber,
-      storedBy:    chainData?.storedBy || null,
+      storedBy: chainData?.storedBy || null,
       etherscanUrl: `https://sepolia.etherscan.io/tx/${prediction.blockchainTxHash}`,
     });
   } catch (err) {
