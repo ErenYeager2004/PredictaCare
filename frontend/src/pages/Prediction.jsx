@@ -860,7 +860,7 @@ export default function Prediction() {
         } else userInputs[f.name] = val;
       }
 
-      const res = await fetch(`${BACKEND_URL}/api/predictions/predict`, {
+      const res = await fetch(`${BACKEND_URL}/predict/${disease}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", token },
         body: JSON.stringify({
