@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import random
-
+import matplotlib.pyplot as plt
 #  Verify running from backend/ directory
 if not os.path.exists("predictionModel"):
     print("ERROR: Run this script from the backend/ directory:")
@@ -30,6 +30,7 @@ np.random.seed(SEED)
 random.seed(SEED)
 
 #  Paths
+BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH      = "predictionModel/diabetes/diabetes_prediction_dataset.csv"
 LITE_DIR       = "predictionModel/lite_models"
 MODEL_PATH     = "predictionModel/lite_models/diabetes_lite.pkl"
@@ -38,6 +39,8 @@ THRESHOLD_PATH = "predictionModel/lite_models/diabetes_lite_threshold.json"
 
 os.makedirs(LITE_DIR, exist_ok=True)
 
+PLOTS_DIR = "predictionModel/diabetes/plots"
+os.makedirs(PLOTS_DIR, exist_ok=True)
 #  Config
 TARGET = "diabetes"
 
@@ -147,11 +150,72 @@ model = XGBClassifier(
     n_jobs            = -1,
 )
 
+
 model.fit(
-    X_train, y_train,
-    eval_set              = [(X_test, y_test)],
-    verbose               = 50,
+    X_train,
+    y_train,
+    eval_set=[(X_train, y_train), (X_test, y_test)],
+    verbose=50,
 )
+
+def plot_xgb_training(model):
+    results = model.evals_result()
+
+    print("\nAvailable metrics:")
+    print(results)
+
+    train_key = list(results['validation_0'].keys())[0]
+    val_key   = list(results['validation_1'].keys())[0]
+
+    train_values = results['validation_0'][train_key]
+    val_values   = results['validation_1'][val_key]
+
+    plt.figure(figsize=(8,5))
+
+    plt.plot(train_values, label=f'Train {train_key}')
+    plt.plot(val_values, label=f'Validation {val_key}')
+
+    plt.xlabel("Boosting Round")
+    plt.ylabel(train_key.upper())
+
+    plt.title(
+        f"XGBoost Training vs Validation {train_key.upper()}"
+    )
+
+    plt.legend()
+
+    save_path = os.path.join(
+        PLOTS_DIR,
+        "xgb_training_curve.png"
+    )
+
+    plt.savefig(save_path, bbox_inches='tight')
+
+    print(f"\nGraph saved to:")
+    print(save_path)
+
+    plt.close()
+
+
+def plot_roc_curve(y_test, y_prob):
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+
+    roc_auc = roc_auc_score(y_test, y_prob)
+
+    plt.figure(figsize=(6,6))
+
+    plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.4f}')
+    plt.plot([0,1], [0,1], linestyle='--')
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
+    plt.legend()
+
+    plt.savefig(os.path.join(PLOTS_DIR, "roc_curve.png"))
+    plt.close()
+
+plot_xgb_training(model)
 
 #  Step 7: Threshold
 print("\n Optimizing threshold...")
@@ -168,6 +232,8 @@ with open(THRESHOLD_PATH, "w") as f:
 print(f"   Model     → {MODEL_PATH}")
 print(f"   Columns   → {COLUMNS_PATH}")
 print(f"   Threshold → {THRESHOLD_PATH}")
+
+plot_roc_curve(y_test, y_prob)
 
 #  Step 9: Evaluate
 evaluate(model, X_test, y_test, threshold)
