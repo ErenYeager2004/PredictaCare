@@ -30,7 +30,7 @@ const Login = () => {
           password,
         });
         if (data.success) {
-          localStorage.removeItem("aToken");
+          localStorage.setItem("aToken", data.token);
           setAToken(data.token);
           navigate("/admin-dashboard");
         } else {
@@ -42,7 +42,7 @@ const Login = () => {
           password,
         });
         if (data.success) {
-          localStorage.removeItem("dToken");
+          localStorage.setItem("dToken", data.token);
           setDToken(data.token);
           navigate("/doctor-profile");
         } else {

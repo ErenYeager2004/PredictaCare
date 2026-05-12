@@ -22,6 +22,7 @@ from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
 
@@ -45,6 +46,8 @@ THRESHOLD_PATH = os.path.join(SCALER_DIR, "diabetes_threshold.json")
 
 os.makedirs(MODEL_DIR,  exist_ok=True)
 os.makedirs(SCALER_DIR, exist_ok=True)
+PLOTS_DIR = os.path.join(BASE_DIR, "plots")
+os.makedirs(PLOTS_DIR, exist_ok=True)
 
 #  Configuration
 TARGET           = "diabetes"
@@ -216,6 +219,54 @@ model.compile(
 
 model.summary()
 
+def plot_training_history(history):
+    # Accuracy Graph
+    plt.figure(figsize=(8,5))
+
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training vs Validation Accuracy")
+    plt.legend()
+
+    plt.savefig(os.path.join(PLOTS_DIR, "accuracy_curve.png"))
+    plt.close()
+
+    # Loss Graph
+    plt.figure(figsize=(8,5))
+
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training vs Validation Loss")
+    plt.legend()
+
+    plt.savefig(os.path.join(PLOTS_DIR, "loss_curve.png"))
+    plt.close()
+
+
+def plot_roc_curve(y_test, y_prob):
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+
+    roc_auc = roc_auc_score(y_test, y_prob)
+
+    plt.figure(figsize=(6,6))
+
+    plt.plot(fpr, tpr, label=f'AUC = {roc_auc:.4f}')
+    plt.plot([0,1], [0,1], linestyle='--')
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve")
+    plt.legend()
+
+    plt.savefig(os.path.join(PLOTS_DIR, "roc_curve.png"))
+    plt.close()
+
 #  Step 9: Train the model
 print("\n  Training...")
 history = model.fit(
@@ -226,12 +277,14 @@ history = model.fit(
     callbacks=get_callbacks(),
     verbose=1
 )
+plot_training_history(history)
 
 # ─── Step 10: Threshold Optimisation ─────────────────────────────────────────
 # Default 0.5 threshold is bad for imbalanced medical data
 # We optimize for F1 to balance precision and recall
 print("\n🎯 Optimizing classification threshold...")
 y_prob = model.predict(X_test_s, verbose=0).ravel()
+plot_roc_curve(y_test, y_prob)
 threshold, best_f1 = optimize_threshold(y_test, y_prob)
 print(f"  Optimal threshold : {threshold:.4f}  (F1={best_f1:.4f})")
 print(f"  Default threshold : 0.5000  (F1={f1_score(y_test, (y_prob>=0.5).astype(int)):.4f})")
@@ -255,3 +308,5 @@ evaluate(model, X_test_s, y_test, threshold)
 print("\n Diabetes model training complete.")
 print("   Note: Pay attention to False Negative Rate —")
 print("   missing a diabetic patient is more dangerous than a false alarm.")
+
+

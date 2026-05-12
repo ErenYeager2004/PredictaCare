@@ -8,6 +8,10 @@ import pandas as pd
 import joblib
 import random
 import tensorflow as tf
+import matplotlib
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 
 #  Verify running from backend/ directory
 if not os.path.exists("predictionModel"):
@@ -51,6 +55,9 @@ THRESHOLD_PATH = "predictionModel/scalers/stroke_threshold.json"
 
 os.makedirs(MODEL_DIR,  exist_ok=True)
 os.makedirs(SCALER_DIR, exist_ok=True)
+
+PLOTS_DIR = "predictionModel/strock/plots"
+os.makedirs(PLOTS_DIR, exist_ok=True)
 
 #  Config
 TARGET           = "stroke"
@@ -118,6 +125,105 @@ def get_callbacks():
             patience=10, min_lr=1e-6, verbose=1
         ),
     ]
+
+
+def plot_training_history(history):
+    # Accuracy Curve
+    plt.figure(figsize=(8,5))
+
+    plt.plot(
+        history.history['accuracy'],
+        label='Training Accuracy'
+    )
+
+    plt.plot(
+        history.history['val_accuracy'],
+        label='Validation Accuracy'
+    )
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+
+    plt.title(
+        "Stroke Training vs Validation Accuracy"
+    )
+
+    plt.legend()
+
+    plt.savefig(
+        os.path.join(PLOTS_DIR, "accuracy_curve.png"),
+        bbox_inches='tight'
+    )
+
+    plt.close()
+
+    # Loss Curve
+    plt.figure(figsize=(8,5))
+
+    plt.plot(
+        history.history['loss'],
+        label='Training Loss'
+    )
+
+    plt.plot(
+        history.history['val_loss'],
+        label='Validation Loss'
+    )
+
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+
+    plt.title(
+        "Stroke Training vs Validation Loss"
+    )
+
+    plt.legend()
+
+    plt.savefig(
+        os.path.join(PLOTS_DIR, "loss_curve.png"),
+        bbox_inches='tight'
+    )
+
+    plt.close()
+
+    print("✅ Training graphs saved")
+
+
+def plot_roc_curve(y_test, y_prob):
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+
+    roc_auc = roc_auc_score(y_test, y_prob)
+
+    plt.figure(figsize=(6,6))
+
+    plt.plot(
+        fpr,
+        tpr,
+        label=f'AUC = {roc_auc:.4f}'
+    )
+
+    plt.plot(
+        [0,1],
+        [0,1],
+        linestyle='--'
+    )
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+
+    plt.title("Stroke ROC Curve")
+
+    plt.legend()
+
+    plt.savefig(
+        os.path.join(PLOTS_DIR, "roc_curve.png"),
+        bbox_inches='tight'
+    )
+
+    plt.close()
+
+    print("✅ ROC curve saved")
+
 
 
 #  Step 1: Load
@@ -257,7 +363,7 @@ model.summary()
 
 #  Step 10: Train
 print("\n  Training...")
-model.fit(
+history = model.fit(
     X_train_res, y_train_res,
     validation_data=(X_test_s, y_test),
     epochs=200,
@@ -267,9 +373,12 @@ model.fit(
     verbose=1
 )
 
+plot_training_history(history)
+
 #  Step 11: Threshold Optimisation
 print("\n🎯 Optimizing classification threshold...")
 y_prob = model.predict(X_test_s, verbose=0).ravel()
+plot_roc_curve(y_test, y_prob)
 threshold, best_f1 = optimize_threshold(y_test, y_prob)
 print(f"  Optimal threshold : {threshold:.4f}")
 print(f"  Default threshold : 0.5000  (F1={f1_score(y_test, (y_prob>=0.5).astype(int)):.4f})")

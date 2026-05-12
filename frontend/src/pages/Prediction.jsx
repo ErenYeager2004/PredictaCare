@@ -9,7 +9,7 @@ import UpgradeModal from "../components/UpgradeModal";
 import BlockchainBadge from "../components/BlockchainBadge";
 import PredictionSkeleton from "../components/PredictionSkeleton";
 import OnboardingTour from "../components/OnboardingTour";
-
+import ConsultModal from "../components/ConsultModal";
 /* ─────────────────────────────────────────────────────────────────────────────
    FONT INJECTION — Space Grotesk (headings) + Inter (body)
 ───────────────────────────────────────────────────────────────────────────── */
@@ -619,97 +619,97 @@ const FieldInput = ({ field, value, onChange }) => (
   </div>
 );
 
-const ConsultModal = ({ disease, onClose }) => (
-  <motion.div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    onClick={onClose}
-  >
-    <motion.div
-      className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full"
-      initial={{ scale: 0.95, y: 16 }}
-      animate={{ scale: 1, y: 0 }}
-      exit={{ scale: 0.95, y: 16 }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-center gap-3 mb-5">
-        <div className="h-10 w-10 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
-          <svg
-            className="w-5 h-5 text-teal-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        </div>
-        <div>
-          <h3
-            className="font-semibold text-slate-800 text-base"
-            style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Doctor Consultation
-          </h3>
-          <p className="text-xs text-slate-400">Premium benefit</p>
-        </div>
-      </div>
-      <div className="bg-teal-50 rounded-xl px-4 py-3 mb-4">
-        <p className="text-xs text-teal-600 font-medium mb-0.5">
-          Recommended Specialist
-        </p>
-        <p className="text-sm font-semibold text-teal-800">
-          {SPECIALIST[disease] || "General Physician"}
-        </p>
-      </div>
-      <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-4">
-        <div>
-          <p className="text-xs text-slate-500">Video consultation</p>
-          <p className="text-xs text-slate-400 mt-0.5">
-            30-min verified specialist call
-          </p>
-        </div>
-        <span
-          className="text-lg font-bold text-slate-800"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-        >
-          ₹299
-        </span>
-      </div>
-      <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-5">
-        <svg
-          className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <p className="text-xs text-amber-700">
-          <strong>Launching Soon</strong> — Bookings will open once our doctor
-          network is onboarded. You'll be notified when it's live.
-        </p>
-      </div>
-      <button
-        onClick={onClose}
-        className="w-full h-10 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
-      >
-        Got it
-      </button>
-    </motion.div>
-  </motion.div>
-);
+// const ConsultModal = ({ disease, onClose }) => (
+//   <motion.div
+//     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+//     initial={{ opacity: 0 }}
+//     animate={{ opacity: 1 }}
+//     exit={{ opacity: 0 }}
+//     onClick={onClose}
+//   >
+//     <motion.div
+//       className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full"
+//       initial={{ scale: 0.95, y: 16 }}
+//       animate={{ scale: 1, y: 0 }}
+//       exit={{ scale: 0.95, y: 16 }}
+//       onClick={(e) => e.stopPropagation()}
+//     >
+//       <div className="flex items-center gap-3 mb-5">
+//         <div className="h-10 w-10 rounded-full bg-teal-50 flex items-center justify-center flex-shrink-0">
+//           <svg
+//             className="w-5 h-5 text-teal-600"
+//             fill="none"
+//             viewBox="0 0 24 24"
+//             stroke="currentColor"
+//             strokeWidth={2}
+//           >
+//             <path
+//               strokeLinecap="round"
+//               strokeLinejoin="round"
+//               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+//             />
+//           </svg>
+//         </div>
+//         <div>
+//           <h3
+//             className="font-semibold text-slate-800 text-base"
+//             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+//           >
+//             Doctor Consultation
+//           </h3>
+//           <p className="text-xs text-slate-400">Premium benefit</p>
+//         </div>
+//       </div>
+//       <div className="bg-teal-50 rounded-xl px-4 py-3 mb-4">
+//         <p className="text-xs text-teal-600 font-medium mb-0.5">
+//           Recommended Specialist
+//         </p>
+//         <p className="text-sm font-semibold text-teal-800">
+//           {SPECIALIST[disease] || "General Physician"}
+//         </p>
+//       </div>
+//       <div className="flex items-center justify-between bg-slate-50 rounded-xl px-4 py-3 mb-4">
+//         <div>
+//           <p className="text-xs text-slate-500">Video consultation</p>
+//           <p className="text-xs text-slate-400 mt-0.5">
+//             30-min verified specialist call
+//           </p>
+//         </div>
+//         <span
+//           className="text-lg font-bold text-slate-800"
+//           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+//         >
+//           ₹299
+//         </span>
+//       </div>
+//       <div className="flex items-start gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-5">
+//         <svg
+//           className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"
+//           fill="none"
+//           viewBox="0 0 24 24"
+//           stroke="currentColor"
+//           strokeWidth={2}
+//         >
+//           <path
+//             strokeLinecap="round"
+//             strokeLinejoin="round"
+//             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+//           />
+//         </svg>
+//         <p className="text-xs text-amber-700">
+//           <strong>Launching Soon</strong> — Bookings will open once our doctor
+//           network is onboarded. You'll be notified when it's live.
+//         </p>
+//       </div>
+//       <button
+//         onClick={onClose}
+//         className="w-full h-10 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
+//       >
+//         Got it
+//       </button>
+//     </motion.div>
+//   </motion.div>
+// );
 
 const Preloader = () => (
   <div
@@ -1023,6 +1023,9 @@ export default function Prediction() {
         {showConsult && (
           <ConsultModal
             disease={disease}
+            predictionId={result?.predictionId}
+            predictionResult={result?.risk}
+            probability={result?.probability}
             onClose={() => setShowConsult(false)}
           />
         )}

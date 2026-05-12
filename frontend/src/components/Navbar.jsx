@@ -106,6 +106,12 @@ const Navbar = () => {
                   >
                     My Predictions
                   </p>
+                  <p
+                    onClick={() => navigate("my-consultations")}
+                    className="hover:text-black cursor-pointer"
+                  >
+                    My Consultations
+                  </p>
 
                   <p
                     onClick={logout}

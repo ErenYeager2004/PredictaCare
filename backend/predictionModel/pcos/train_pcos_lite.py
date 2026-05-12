@@ -6,6 +6,10 @@ import numpy as np
 import pandas as pd
 import joblib
 import random
+import matplotlib
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 
 if not os.path.exists("predictionModel"):
     print("ERROR: Run this script from the backend/ directory:")
@@ -34,7 +38,8 @@ COLUMNS_PATH   = "predictionModel/lite_models/pcos_lite_columns.pkl"
 THRESHOLD_PATH = "predictionModel/lite_models/pcos_lite_threshold.json"
 
 os.makedirs(LITE_DIR, exist_ok=True)
-
+PLOTS_DIR = "predictionModel/pcos/plots"
+os.makedirs(PLOTS_DIR, exist_ok=True)
 TARGET = "PCOS (Y/N)"
 
 # Self-reported — user fills form without any tests
@@ -97,6 +102,96 @@ def evaluate(model, X_test, y_test, threshold):
     print(f"\n  False Negative Rate: {cm[1][0]/(cm[1][0]+cm[1][1])*100:.1f}%")
 
 
+def plot_xgb_training(model):
+    results = model.evals_result()
+
+    print("\nAvailable metrics:")
+    print(results)
+
+    metric_name = list(results['validation_0'].keys())[0]
+
+    val_metric = results['validation_0'][metric_name]
+
+    # If training metrics exist
+    if 'validation_1' in results:
+        train_metric = results['validation_1'][metric_name]
+
+        plt.figure(figsize=(8,5))
+
+        plt.plot(
+            train_metric,
+            label=f"Training {metric_name.upper()}"
+        )
+
+        plt.plot(
+            val_metric,
+            label=f"Validation {metric_name.upper()}"
+        )
+
+    else:
+        plt.figure(figsize=(8,5))
+
+        plt.plot(
+            val_metric,
+            label=f"Validation {metric_name.upper()}"
+        )
+
+    plt.xlabel("Boosting Round")
+    plt.ylabel(metric_name.upper())
+
+    plt.title(
+        f"PCOS XGBoost Training Curve"
+    )
+
+    plt.legend()
+
+    plt.savefig(
+        os.path.join(PLOTS_DIR, "xgb_training_curve.png"),
+        bbox_inches='tight'
+    )
+
+    plt.close()
+
+    print("✅ XGBoost training curve saved")
+
+
+def plot_roc_curve(y_test, y_prob):
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+
+    roc_auc = roc_auc_score(y_test, y_prob)
+
+    plt.figure(figsize=(6,6))
+
+    plt.plot(
+        fpr,
+        tpr,
+        label=f"AUC = {roc_auc:.4f}"
+    )
+
+    plt.plot(
+        [0,1],
+        [0,1],
+        linestyle='--'
+    )
+
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+
+    plt.title("PCOS ROC Curve")
+
+    plt.legend()
+
+    plt.savefig(
+        os.path.join(PLOTS_DIR, "roc_curve.png"),
+        bbox_inches='tight'
+    )
+
+    plt.close()
+
+    print("✅ ROC curve saved")
+
+
+
 #  Load
 print("\n PCOS FREE TIER — XGBoost Training")
 print("=" * 55)
@@ -143,15 +238,25 @@ model = XGBClassifier(
     n_jobs            = -1,
 )
 
+
 model.fit(
-    X_train, y_train,
-    eval_set              = [(X_test, y_test)],
-    verbose               = 50,
+    X_train,
+    y_train,
+
+    eval_set=[
+        (X_train, y_train),
+        (X_test, y_test)
+    ],
+
+    verbose=50,
 )
+
+plot_xgb_training(model)
 
 #  Threshold & Save
 print("\n Optimizing threshold...")
 y_prob       = model.predict_proba(X_test)[:, 1]
+plot_roc_curve(y_test, y_prob)
 threshold, _ = optimize_threshold(y_test, y_prob)
 
 print("\n Saving artifacts...")
