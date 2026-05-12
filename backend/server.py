@@ -38,6 +38,7 @@ CORS(app, resources={
     r"/*": {
         "origins": [
             "https://predictacare-1.onrender.com",
+            "http://localhost:4000",
             "http://localhost:5173"
         ]
     }
