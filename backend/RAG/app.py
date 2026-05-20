@@ -6,6 +6,9 @@ Run: python app.py
 
 import sys
 import os
+from groq import Groq
+from dotenv import load_dotenv
+load_dotenv()
 sys.path.insert(0, os.path.dirname(__file__))
 
 from flask import Flask, request, jsonify
@@ -21,6 +24,10 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 retriever = None
 
+groq_client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
+
 def init_retriever():
     global retriever
     try:
@@ -35,6 +42,140 @@ def init_retriever():
         print("[HINT] Did you run 'python ingest.py' first?")
         retriever = None
 
+@app.route("/rag-health-suggestions", methods=["POST"])
+def rag_health_suggestions():
+
+    data = request.get_json()
+
+    disease = data.get("disease", "")
+    risk = data.get("risk", "")
+    probability = data.get("probability", 0)
+    user_inputs = data.get("userInputs", {})
+
+    if retriever is None:
+        return jsonify({
+            "reply": "RAG system unavailable currently."
+        }), 200
+
+    try:
+
+        # ──────────────────────────────────────────────────────────────────
+        # Build retrieval query
+        # ──────────────────────────────────────────────────────────────────
+
+        query = f"""
+        Disease: {disease}
+
+        Risk Level: {risk}
+
+        User Inputs:
+        {user_inputs}
+
+        Give:
+        - diet recommendations
+        - exercise recommendations
+        - lifestyle changes
+        - warning signs
+        - monitoring advice
+        """
+
+        # ──────────────────────────────────────────────────────────────────
+        # Retrieve RAG context
+        # ──────────────────────────────────────────────────────────────────
+
+        retrieved_context = retriever.retrieve(query)
+
+        # ──────────────────────────────────────────────────────────────────
+        # Final AI prompt
+        # ──────────────────────────────────────────────────────────────────
+
+        prompt = f"""
+You are PredictaCare AI Health Assistant.
+
+Use ONLY the provided medical context.
+
+================ MEDICAL CONTEXT ================
+
+{retrieved_context}
+
+=================================================
+
+PATIENT DETAILS:
+
+Disease: {disease}
+
+Risk Level: {risk}
+
+Probability: {probability}%
+
+User Inputs:
+{user_inputs}
+
+Generate a personalised health plan in markdown format.
+
+Required sections:
+
+## Summary
+
+## Immediate Actions
+
+## Daily Lifestyle Changes
+
+## Diet & Nutrition
+
+## Exercise Recommendations
+
+## Stress & Mental Wellness
+
+## When to See a Doctor
+
+## Monitoring & Tracking
+
+Rules:
+- Keep language simple
+- Be medically grounded
+- Tailor advice specifically to the disease
+- Never prescribe medicines
+- Never mention medication dosages
+- HIGH risk should sound more urgent
+- LOW risk should focus on prevention
+- Use markdown formatting
+- Use bullet points when appropriate
+"""
+
+        completion = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            temperature=0.3,
+            max_tokens=1200,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are PredictaCare AI Health Assistant. "
+                        "Never hallucinate medical information."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+        )
+
+        reply = completion.choices[0].message.content
+
+        return jsonify({
+            "reply": reply
+        })
+
+    except Exception as e:
+
+        print(f"[ERROR] RAG suggestion failed: {e}")
+
+        return jsonify({
+            "reply": "Failed to generate suggestions.",
+            "error": str(e)
+        }), 200
 
 # ── POST /retrieve ─────────────────────────────────────────────────────────────
 @app.route("/retrieve", methods=["POST"])

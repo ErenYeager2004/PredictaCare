@@ -474,7 +474,7 @@ def predict(disease):
             )
             # Heart premium model was trained with flipped labels (0=disease, 1=healthy)
             # Invert the probability so HIGH risk inputs give HIGH probability
-            prob      = (1.0 - raw_prob) if disease == "heart" else raw_prob
+            prob = (1.0 - raw_prob) if disease in ("heart", "pcos") else raw_prob
             threshold = _premium_thresholds[disease]
 
         # ── Free (XGBoost) prediction ─────────────────────────────────────────

@@ -55,9 +55,8 @@ const AppContextProvider = (props) => {
           d &&
           d.success === false &&
           typeof d.message === "string" &&
-          (d.message.toLowerCase().includes("jwt") ||
-           d.message.toLowerCase().includes("expired") ||
-           d.message.toLowerCase().includes("not authorized"))
+          (d.message.toLowerCase().includes("jwt expired") || // ← specific JWT errors only
+            d.message.toLowerCase().includes("token expired")) // ← NOT "not authorized"
         ) {
           // Don't retry refresh calls themselves to avoid infinite loop
           if (response.config.url?.includes("refresh-token")) {
@@ -68,7 +67,9 @@ const AppContextProvider = (props) => {
           if (!response.config._retry) {
             response.config._retry = true;
             try {
-              const { data } = await axios.post(backendUrl + "/api/user/refresh-token");
+              const { data } = await axios.post(
+                backendUrl + "/api/user/refresh-token",
+              );
               if (data.success) {
                 setToken(data.token);
                 response.config.headers["token"] = data.token;
@@ -88,7 +89,9 @@ const AppContextProvider = (props) => {
         if (error.response?.status === 401 && !original._retry) {
           original._retry = true;
           try {
-            const { data } = await axios.post(backendUrl + "/api/user/refresh-token");
+            const { data } = await axios.post(
+              backendUrl + "/api/user/refresh-token",
+            );
             if (data.success) {
               setToken(data.token);
               original.headers["token"] = data.token;
@@ -101,7 +104,7 @@ const AppContextProvider = (props) => {
           setUserData(false);
         }
         return Promise.reject(error);
-      }
+      },
     );
     return () => axios.interceptors.response.eject(interceptor);
   }, []);

@@ -5,17 +5,15 @@ import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import { json } from "express";
 
-// ✅ Fetch only assigned cases for the doctor
 const getAssignedReviews = async (req, res) => {
   try {
-    const doctorId = req.body.docId;
+    const doctorId = req.docId;
     if (!doctorId) {
       return res
         .status(401)
         .json({ success: false, message: "Not Authorized. Login Again." });
     }
 
-    // ✅ Fetch only "pending" predictions
     const predictions = await Prediction.find({
       doctorId,
       status: "reviewing",
@@ -28,10 +26,10 @@ const getAssignedReviews = async (req, res) => {
   }
 };
 
-// ✅ Approve/Reject prediction
+// Approve/Reject prediction
 const reviewPrediction = async (req, res) => {
   try {
-    const doctorId = req.body.docId;
+    const doctorId = req.docId;
     const { predictionId } = req.params;
     const { status } = req.body;
 
@@ -78,7 +76,7 @@ const reviewPrediction = async (req, res) => {
 
 const changeAvailablity = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
 
     const docData = await doctorModel.findById(docId);
     await doctorModel.findByIdAndUpdate(docId, {
@@ -149,7 +147,7 @@ const loginDoctor = async (req, res) => {
 
 const appointmentsDoctor = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
 
     const appointments = await appointmentModel.find({ docId });
     res.json({ success: true, appointments });
@@ -165,7 +163,8 @@ const appointmentsDoctor = async (req, res) => {
 
 const appointmentComplete = async (req, res) => {
   try {
-    const { docId, appointmentId } = req.body;
+    const { appointmentId } = req.body;
+    const docId = req.docId;
     const appointmentData = await appointmentModel.findById(appointmentId);
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
@@ -185,7 +184,8 @@ const appointmentComplete = async (req, res) => {
 
 const appointmentCancel = async (req, res) => {
   try {
-    const { docId, appointmentId } = req.body;
+    const { appointmentId } = req.body;
+    const docId = req.docId;
     const appointmentData = await appointmentModel.findById(appointmentId);
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
@@ -207,7 +207,7 @@ const appointmentCancel = async (req, res) => {
 
 const doctorDashboard = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
     const appointments = await appointmentModel.find({ docId });
 
     let earnings = 0;
@@ -243,7 +243,7 @@ const doctorDashboard = async (req, res) => {
 
 const docProfile = async (req, res) => {
   try {
-    const { docId } = req.body;
+    const docId = req.docId;
     const profileData = await doctorModel.findById(docId).select("-password");
     res.json({ success: true, profileData });
   } catch (error) {
@@ -256,7 +256,9 @@ const docProfile = async (req, res) => {
 
 const editDocProfile = async (req, res) => {
   try {
-    const { docId, fees, address, available } = req.body;
+    const { fees, address, available } = req.body;
+
+    const docId = req.docId;
     await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
 
     res.json({ success: true, message: "Profile Updated" });

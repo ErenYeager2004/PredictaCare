@@ -10,9 +10,8 @@ import BlockchainBadge from "../components/BlockchainBadge";
 import PredictionSkeleton from "../components/PredictionSkeleton";
 import OnboardingTour from "../components/OnboardingTour";
 import ConsultModal from "../components/ConsultModal";
-/* ─────────────────────────────────────────────────────────────────────────────
-   FONT INJECTION — Space Grotesk (headings) + Inter (body)
-───────────────────────────────────────────────────────────────────────────── */
+import Lottie from "lottie-react";
+import premiumLottie from "../assets/Premium Gold.json";
 const injectFonts = () => {
   if (document.getElementById("diagnoai-fonts")) return;
   const link = document.createElement("link");
@@ -1067,7 +1066,18 @@ export default function Prediction() {
             <span
               className={`mt-1 px-3 py-1 rounded-full text-xs font-semibold ${userIsPremium ? "bg-amber-100 text-amber-700" : "bg-teal-50 text-teal-700 border border-teal-100"}`}
             >
-              {userIsPremium ? "✨ Premium" : "Free plan"}
+              {userIsPremium ? (
+                <span className="flex items-center gap-1">
+                  <Lottie
+                    animationData={premiumLottie}
+                    loop
+                    className="w-6 h-6"
+                  />
+                  Premium
+                </span>
+              ) : (
+                "Free plan"
+              )}
             </span>
           </motion.header>
 
@@ -1365,7 +1375,18 @@ export default function Prediction() {
                           <span
                             className={`text-xs px-2 py-0.5 rounded-full font-semibold ${result.tier === "premium" ? "bg-amber-100 text-amber-700" : "bg-teal-50 text-teal-700"}`}
                           >
-                            {result.tier === "premium" ? "✨ Premium" : "Free"}
+                            {result.tier === "premium" ? (
+                              <span className="flex items-center gap-1">
+                                <Lottie
+                                  animationData={premiumLottie}
+                                  loop
+                                  className="w-5 h-5"
+                                />
+                                Premium
+                              </span>
+                            ) : (
+                              "Free"
+                            )}
                           </span>
                           {result.isBeta && (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold border border-amber-100">

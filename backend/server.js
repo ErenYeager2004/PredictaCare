@@ -20,7 +20,8 @@ import researchRouter from "./routes/researchRoutes.js";
 import { errorHandler } from "./middlewares/errorMiddleware.js";
 import consultationRouter from "./routes/consultationRoutes.js";
 import researchHubRouter from "./routes/researchHubRoutes.js";
-
+import "./jobs/blockchainRetryJob.js";
+import aiSuggestionRoute from "./routes/aiSuggestionRoute.js";
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -36,6 +37,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "https://predictacare-1.onrender.com",
+  "http://localhost:5175",
 ];
 
 // ─── CORS — must be first ─────────────────────────────────────────────────────
@@ -49,6 +51,7 @@ app.use(
       "token",
       "atoken",
       "dtoken",
+      "rtoken",
     ],
     credentials: true,
   }),
@@ -124,174 +127,67 @@ app.use(
   }),
 );
 
-// ─── Chatbot ──────────────────────────────────────────────────────────────────
-// ─── Chatbot ──────────────────────────────────────────────────────────────────
+// Chatbot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
 app.post("/api/chat", async (req, res) => {
   try {
-
     const { message, history = [] } = req.body;
 
-    // --------------------------------------------------
-    // Validation
-    // --------------------------------------------------
+    if (!message || !message.trim())
+      return res
+        .status(400)
+        .json({ success: false, error: "Message is required" });
 
-    if (!message || !message.trim()) {
-      return res.status(400).json({
-        success: false,
-        error: "Message is required",
-      });
-    }
-
-    // --------------------------------------------------
-    // Retrieve RAG Context
-    // --------------------------------------------------
-
+    // Retrieve RAG context
     let ragContext = "";
-
     try {
-
-      const ragRes = await fetch(
-        "http://localhost:5001/retrieve",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            query: message,
-          }),
-        }
-      );
-
+      const ragRes = await fetch("http://localhost:5001/retrieve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: message }),
+      });
       const ragData = await ragRes.json();
-
       ragContext = ragData.context || "";
-
-      console.log("\n===== RAG CONTEXT =====\n");
-      console.log(ragContext);
-      console.log("\n=======================\n");
-
-      console.log("[RAG] Context retrieved.");
-
     } catch (ragError) {
-
-      console.warn(
-        "[RAG ERROR]",
-        ragError.message
-      );
+      console.warn("[RAG ERROR]", ragError.message);
     }
-
-    // --------------------------------------------------
-    // System Prompt
-    // --------------------------------------------------
 
     const SYSTEM_PROMPT = `
 You are PredictaCare AI Assistant.
-
-You help users understand:
-- diabetes
-- PCOS
-- heart disease
-- stroke
-- preventive healthcare
-- healthy lifestyle practices
-- PredictaCare platform features
+You help users understand diabetes, PCOS, heart disease, stroke, preventive healthcare, healthy lifestyle practices, and PredictaCare platform features.
 
 RULES:
 - Use the provided knowledge base context
 - Answer accurately and concisely
-- If the answer is not found in the context,
-  say you do not know
+- If the answer is not found in the context, say you do not know
 - Never hallucinate information
-- Never provide diagnoses
-- Never prescribe medications
+- Never provide diagnoses or prescribe medications
 - Never replace professional medical advice
-- Encourage users to consult doctors for
-  medical concerns
-
-You MUST prioritize the retrieved
-knowledge base context when answering.
+- Encourage users to consult doctors for medical concerns
 `;
 
-    // --------------------------------------------------
-    // Enhanced Prompt with RAG
-    // --------------------------------------------------
-
-    const systemWithContext = `
-${SYSTEM_PROMPT}
-
-================ KNOWLEDGE BASE ================
-
-${ragContext}
-
-================================================
-`;
-
-    // --------------------------------------------------
-    // Build Messages
-    // --------------------------------------------------
+    const systemWithContext = `${SYSTEM_PROMPT}\n\n======== KNOWLEDGE BASE ========\n${ragContext}\n================================`;
 
     const messages = [
-      {
-        role: "system",
-        content: systemWithContext,
-      },
-
+      { role: "system", content: systemWithContext },
       ...history.slice(-10),
-
-      {
-        role: "user",
-        content: message,
-      },
+      { role: "user", content: message },
     ];
 
-    // --------------------------------------------------
-    // Groq Completion
-    // --------------------------------------------------
-
-    const completion =
-      await groq.chat.completions.create({
-
-        model: "llama-3.3-70b-versatile",
-
-        temperature: 0.3,
-
-        max_tokens: 1024,
-
-        messages,
-      });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3,
+      max_tokens: 1024,
+      messages,
+    });
 
     const reply =
-      completion?.choices?.[0]?.message?.content
-      || "No response generated.";
-
-    // --------------------------------------------------
-    // Response
-    // --------------------------------------------------
-
-    return res.json({
-      success: true,
-      reply,
-      ragUsed: !!ragContext,
-
-      // TEMP DEBUG
-      ragContext,
-    });
-
+      completion?.choices?.[0]?.message?.content || "No response generated.";
+    return res.json({ success: true, reply, ragUsed: !!ragContext });
   } catch (error) {
-
-    console.error(
-      "\n[CHAT API ERROR]\n",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      error: "AI service failed",
-    });
+    console.error("\n[CHAT API ERROR]\n", error);
+    return res.status(500).json({ success: false, error: "AI service failed" });
   }
 });
 
@@ -303,7 +199,7 @@ app.use("/api/predictions", predictionRouter);
 app.use("/api/research", researchRouter);
 app.use("/api/consultations", consultationRouter);
 app.use("/api/research-hub", researchHubRouter);
-
+app.use("/api/ai-suggestions", aiSuggestionRoute);
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "API is running" });

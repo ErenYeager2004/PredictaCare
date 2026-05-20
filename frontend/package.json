@@ -10,12 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.3.4",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@google/generative-ai": "^0.24.0",
     "@tailwindcss/vite": "^4.0.14",
     "@vercel/speed-insights": "^1.2.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "agora-rtc-react": "^2.5.1",
+    "agora-rtc-sdk-ng": "^4.24.3",
     "axios": "^1.8.2",
     "dompurify": "^3.3.2",
     "ethers": "^6.16.0",
@@ -23,6 +25,7 @@
     "install": "^0.13.0",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
+    "lottie-react": "^2.4.1",
     "marked": "^15.0.7",
     "npm": "^11.2.0",
     "qrcode.react": "^4.2.0",

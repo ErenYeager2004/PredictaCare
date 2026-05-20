@@ -1,10 +1,4 @@
-/**
- * VerifyPrediction.jsx — Public prediction verification page
- * Copy to: frontend/src/pages/VerifyPrediction.jsx
- * Add to App.jsx: <Route path="/verify" element={<VerifyPrediction />} />
- *
- * Dependencies: npm install qrcode.react
- */
+
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
