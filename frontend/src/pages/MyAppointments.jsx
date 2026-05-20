@@ -17,7 +17,6 @@ const MyAppointments = () => {
   const [appointments, setAppointments] = useState([])
   const [loadingRzp, setLoadingRzp] = useState(false);
 
-  // --- Load Razorpay script safely ---
   const loadRazorpay = async () => {
     if (window.Razorpay) return true;
     return new Promise((resolve) => {
@@ -69,19 +68,16 @@ const MyAppointments = () => {
 
   const openRazorpay = (order) => {
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID, // PUBLIC key
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       name: "Appointment Payment",
       description: "Appointment Payment",
-      // When using order_id, DO NOT pass amount/currency here
       order_id: order.id,
       handler: async (response) => {
-        // response: { razorpay_payment_id, razorpay_order_id, razorpay_signature }
         try {
           const verifyData = {
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_order_id: response.razorpay_order_id,
             razorpay_signature: response.razorpay_signature,
-            // optional, backend uses order.receipt but sending helps for auditing
             appointmentId: order.receipt,
           };
 
@@ -112,7 +108,6 @@ const MyAppointments = () => {
         context: "Appointment payment",
       },
       theme: {
-        // keep default colors unless you want to set brand colors
       },
     };
 

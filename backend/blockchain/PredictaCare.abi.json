@@ -65,6 +65,12 @@
         "type": "bytes32"
       },
       {
+        "indexed": false,
+        "internalType": "string",
+        "name": "ipfsCid",
+        "type": "string"
+      },
+      {
         "indexed": true,
         "internalType": "address",
         "name": "storedBy",
@@ -145,12 +151,54 @@
         "type": "string"
       }
     ],
+    "name": "getCid",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "ipfsCid",
+        "type": "string"
+      },
+      {
+        "internalType": "bool",
+        "name": "exists",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getOwner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "predictionId",
+        "type": "string"
+      }
+    ],
     "name": "getPrediction",
     "outputs": [
       {
         "internalType": "bytes32",
         "name": "hash",
         "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "ipfsCid",
+        "type": "string"
       },
       {
         "internalType": "uint256",
@@ -260,6 +308,11 @@
         "internalType": "bytes32",
         "name": "hash",
         "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "ipfsCid",
+        "type": "string"
       }
     ],
     "name": "storePrediction",
@@ -316,6 +369,19 @@
         "internalType": "address",
         "name": "storedBy",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "writerCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",

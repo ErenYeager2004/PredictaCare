@@ -1,14 +1,13 @@
-/**
- * MyConsultations.jsx
- * Copy to: frontend/src/pages/MyConsultations.jsx
- * Add to App.jsx: <Route path="/my-consultations" element={<ProtectedRoute><MyConsultations /></ProtectedRoute>} />
- */
-
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { AppContext } from "../context/AppContext";
+import workingBrain from "../assets/working brain.json";
+import heart from "../assets/Human Heart.json";
+import diabetes from "../assets/Diabetes Blood Cells.json";
+import pcos from "../assets/Uterus.json";
+import Lottie from "lottie-react";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
 
@@ -26,7 +25,12 @@ const STATUS_STYLE = {
   cancelled: { bg: "#f1f5f9", text: "#94a3b8", label: "Cancelled" },
 };
 
-const DISEASE_ICON = { heart: "❤️", diabetes: "🩸", pcos: "🔬", stroke: "🧠" };
+const DISEASE_ANIMATIONS = {
+  heart: heart,
+  diabetes: diabetes,
+  pcos: pcos,
+  stroke: workingBrain,
+};
 
 export default function MyConsultations() {
   const { token } = useContext(AppContext);
@@ -91,7 +95,7 @@ export default function MyConsultations() {
     );
     const now = new Date();
     const diff = Math.abs(scheduled - now) / 60000;
-    return diff <= 15; // within 15 minutes
+    return diff <= 15;
   };
 
   return (
@@ -105,7 +109,7 @@ export default function MyConsultations() {
       {/* Header */}
       <div
         style={{
-          background: "linear-gradient(135deg,#0f766e,#0d9488)",
+          background: "linear-gradient(135deg,#4F5FE0,#5F6FFF)",
           padding: "40px 24px 56px",
         }}
       >
@@ -188,7 +192,7 @@ export default function MyConsultations() {
               style={{
                 padding: "10px 24px",
                 borderRadius: 12,
-                background: "#0d9488",
+                background: "#5F6FFF",
                 color: "#fff",
                 border: "none",
                 fontSize: 13,
@@ -235,18 +239,27 @@ export default function MyConsultations() {
                       >
                         <div
                           style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 14,
-                            background: "#f0fdfa",
-                            border: "1.5px solid #99f6e4",
+                            width: 64,
+                            height: 64,
+                            borderRadius: 16,
+                            background: "#EEF2FF",
+                            border: "1.5px solid #C7D2FE",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: 22,
+                            overflow: "hidden",
                           }}
                         >
-                          {DISEASE_ICON[c.disease] || "💊"}
+                          <Lottie
+                            animationData={DISEASE_ANIMATIONS[c.disease] || " "}
+                            loop
+                            autoplay
+                            speed={0.7}
+                            style={{
+                              width: 56,
+                              height: 56,
+                            }}
+                          />
                         </div>
                         <div>
                           <p
@@ -281,7 +294,7 @@ export default function MyConsultations() {
                             <p
                               style={{
                                 fontSize: 12,
-                                color: "#0d9488",
+                                color: "#5F6FFF",
                                 fontWeight: 600,
                                 margin: "4px 0 0",
                               }}
@@ -321,7 +334,7 @@ export default function MyConsultations() {
                                 padding: "6px 16px",
                                 borderRadius: 10,
                                 border: "none",
-                                background: "#0d9488",
+                                background: "#5F6FFF",
                                 color: "#fff",
                                 fontSize: 12,
                                 fontWeight: 700,
@@ -330,7 +343,7 @@ export default function MyConsultations() {
                                 animation: "pulse 1.5s infinite",
                               }}
                             >
-                              🎥 Join Call
+                              Join Call
                             </button>
                           )}
                           {[
@@ -374,10 +387,10 @@ export default function MyConsultations() {
                             style={{
                               padding: "12px 14px",
                               borderRadius: 10,
-                              background: "#f0fdfa",
-                              border: "1px solid #99f6e4",
+                              background: "#EEF2FF",
+                              border: "1px solid #C7D2FE",
                               fontSize: 13,
-                              color: "#134e4a",
+                              color: "#3730A3",
                             }}
                           >
                             <p
@@ -385,7 +398,7 @@ export default function MyConsultations() {
                                 fontWeight: 700,
                                 margin: "0 0 4px",
                                 fontSize: 12,
-                                color: "#0d9488",
+                                color: "#5F6FFF",
                               }}
                             >
                               🩺 Doctor Notes
@@ -413,7 +426,7 @@ export default function MyConsultations() {
                                 color: "#d97706",
                               }}
                             >
-                              💊 Prescription
+                              Prescription
                             </p>
                             <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
                               {c.prescription}
@@ -523,7 +536,7 @@ export default function MyConsultations() {
                               padding: "8px 16px",
                               borderRadius: 8,
                               border: "none",
-                              background: "#0d9488",
+                              background: "#5F6FFF",
                               color: "#fff",
                               fontSize: 13,
                               fontWeight: 600,

@@ -36,6 +36,7 @@ export default function DoctorVideoCall() {
   const timerRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const cleanedUpRef = useRef(false);
 
   useEffect(() => {
     fetchAndJoin();
@@ -48,6 +49,13 @@ export default function DoctorVideoCall() {
     }
     return () => clearInterval(timerRef.current);
   }, [joined]);
+
+  useEffect(() => {
+    if (remoteUser?.videoTrack && remoteVideoRef.current) {
+      remoteVideoRef.current.innerHTML = ""; // clear old video elements
+      remoteUser.videoTrack.play(remoteVideoRef.current);
+    }
+  }, [remoteUser]);
 
   const fetchAndJoin = async () => {
     try {
@@ -74,10 +82,6 @@ export default function DoctorVideoCall() {
         await client.subscribe(user, mediaType);
         if (mediaType === "video") {
           setRemoteUser(user);
-          setTimeout(() => {
-            if (remoteVideoRef.current)
-              user.videoTrack?.play(remoteVideoRef.current);
-          }, 100);
         }
         if (mediaType === "audio") user.audioTrack?.play();
       });
@@ -85,8 +89,11 @@ export default function DoctorVideoCall() {
       client.on("user-unpublished", () => setRemoteUser(null));
       client.on("user-left", () => {
         setRemoteUser(null);
-        toast.info("Patient has left the call");
+
+        toast.info("Patient left the consultation");
       });
+
+      cleanedUpRef.current = false;
 
       await client.join(appId, channelName, agoraToken, null);
 
@@ -106,14 +113,50 @@ export default function DoctorVideoCall() {
   };
 
   const cleanup = async () => {
+    if (cleanedUpRef.current) return;
+
+    cleanedUpRef.current = true;
+
     clearInterval(timerRef.current);
-    localTrackRef.current.audio?.close();
-    localTrackRef.current.video?.close();
-    await clientRef.current?.leave();
+
+    try {
+      localTrackRef.current.audio?.stop();
+      localTrackRef.current.audio?.close();
+
+      localTrackRef.current.video?.stop();
+      localTrackRef.current.video?.close();
+
+      await clientRef.current?.leave();
+    } catch (err) {
+      console.error("Cleanup error:", err);
+    }
+
+    clientRef.current = null;
+
+    localTrackRef.current = {
+      audio: null,
+      video: null,
+    };
+
+    setJoined(false);
+    setRemoteUser(null);
   };
 
   const handleEndCall = async () => {
+    try {
+      await axios.post(
+        `${backendUrl}/api/consultations/end-call`,
+        { consultationId },
+        {
+          headers: { dtoken: dToken },
+        },
+      );
+    } catch (err) {
+      console.error(err);
+    }
+
     await cleanup();
+
     setShowNotes(true);
   };
 
@@ -152,6 +195,8 @@ export default function DoctorVideoCall() {
 
   const S = {
     page: {
+      position: "fixed", // ← add these two lines
+      inset: 0, // ← covers full viewport, escapes sidebar
       minHeight: "100vh",
       background: "#0f172a",
       display: "flex",

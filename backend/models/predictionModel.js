@@ -15,9 +15,11 @@ const predictionSchema = new mongoose.Schema(
     date: { type: Date, default: Date.now },
 
     // ─── Blockchain ──────────────────────────────────────────────────────────
-    blockchainHash:   { type: String, default: null },
+    blockchainHash: { type: String, default: null },
     blockchainTxHash: { type: String, default: null },
-    blockNumber:      { type: Number, default: null },
+    blockNumber: { type: Number, default: null },
+    ipfsCid: { type: String, default: null },
+    ipfsStoredAt: { type: Date, default: null },
 
     // ─── Research consent ────────────────────────────────────────────────────
     // true if user ticked "share anonymised data" during registration

@@ -5,9 +5,20 @@ import {
   buildPredictionHash,
   storePredictionOnChain,
 } from "../services/blockchainService.js";
-
+import { uploadPredictionToIPFS } from "../services/ipfsService.js";
 const FLASK_URL = process.env.FLASK_URL || "http://localhost:5000";
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || "";
+
+// ✅ Module level — defined once, available to all functions in this file
+const stableInputsKey = (inputs) =>
+  JSON.stringify(
+    Object.keys(inputs || {})
+      .sort()
+      .reduce((acc, k) => {
+        acc[k] = inputs[k];
+        return acc;
+      }, {}),
+  );
 
 // --- Helper: Call Flask ML Server ---------------------------------------------
 const callFlask = async (disease, inputData, isPremium) => {
@@ -31,7 +42,7 @@ const callFlask = async (disease, inputData, isPremium) => {
 // --- POST /api/predictions/predict --------------------------------------------
 export const predict = async (req, res) => {
   const { disease, userInputs, userSelectedPremium } = req.body;
-  const userId = req.body.userId;
+  const userId = req.userId;
 
   const validDiseases = ["diabetes", "heart", "pcos", "stroke"];
   if (!disease || !validDiseases.includes(disease)) {
@@ -46,6 +57,40 @@ export const predict = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const now = new Date();
+
+    // ── Duplicate check ────────────────────────────────────────────────────────
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
+    const recentPredictions = await Prediction.find({
+      "userData.email": user.email,
+      disease,
+      createdAt: { $gte: twoMinutesAgo },
+    });
+
+    const inputKey = stableInputsKey(userInputs);
+    const duplicate = recentPredictions.find(
+      (p) => stableInputsKey(p.userData?.inputs) === inputKey,
+    );
+
+    if (duplicate) {
+      console.log(
+        `[Duplicate] Returning existing ${duplicate._id} — no new blockchain tx`,
+      );
+      return res.status(200).json({
+        message: "Prediction complete",
+        predictionId: duplicate._id,
+        disease: duplicate.disease,
+        risk: duplicate.predictionResult,
+        probability: duplicate.probability,
+        tier: duplicate.tier,
+        displayTier: duplicate.tier,
+        isBeta: duplicate.isBeta || false,
+        isDuplicate: true,
+        blockchain: duplicate.blockchainHash
+          ? { hash: duplicate.blockchainHash, status: "confirmed" }
+          : { status: "pending" },
+      });
+    }
+    // ── End duplicate check ───────────────────────────────────────────────────
 
     const isPaidPremium =
       user.subscription === "premium" &&
@@ -72,12 +117,8 @@ export const predict = async (req, res) => {
     const trialLimit = user.predictionsLimit || 5;
     const hasTrialLeft = trialUsed < trialLimit;
 
-    // Respect what the user manually selected in the UI
-    // userSelectedPremium=false means they clicked "Free" — use XGBoost regardless
-    const wantsPremium = userSelectedPremium !== false; // default true if not sent
+    const wantsPremium = userSelectedPremium !== false;
     const isPremium = wantsPremium && (isPaidPremium || hasTrialLeft);
-
-    // Only consume trial if user actually ran premium (DNN)
     const shouldConsumeTrial = isPremium && !isPaidPremium && hasTrialLeft;
 
     const flaskResult = await callFlask(disease, userInputs, isPremium);
@@ -86,7 +127,10 @@ export const predict = async (req, res) => {
       await User.findByIdAndUpdate(userId, { $inc: { predictionsUsed: 1 } });
     }
 
+    const predictionTier = isPremium ? "premium" : "free";
+
     const newPrediction = new Prediction({
+      userId,
       disease,
       userData: {
         name: user.name || "Unknown",
@@ -97,13 +141,14 @@ export const predict = async (req, res) => {
       },
       predictionResult: flaskResult.risk,
       probability: flaskResult.probability,
-      tier: flaskResult.tier,
+      tier: predictionTier,
       isBeta: flaskResult.isBeta || false,
+      consentGiven: user.dataConsent || false,
     });
 
     const saved = await newPrediction.save();
 
-    // ── Blockchain: store hash in background (never blocks response) ──────────
+    // ── Blockchain ─────────────────────────────────────────────────────────────
     let blockchainData = null;
     try {
       const hashHex = buildPredictionHash({
@@ -112,28 +157,62 @@ export const predict = async (req, res) => {
         disease,
         predictionResult: flaskResult.risk,
         probability: flaskResult.probability,
-        tier: isPremium ? "premium" : "free",
+        tier: predictionTier,
         createdAt: saved.createdAt.toISOString(),
       });
 
-      // Fire-and-forget — don't await, never blocks the response
-      storePredictionOnChain(saved._id.toString(), hashHex)
-        .then((onChain) => {
-          if (onChain) {
-            Prediction.findByIdAndUpdate(saved._id, {
+      Promise.all([
+        // Upload encrypted data to IPFS
+        uploadPredictionToIPFS({
+          ...saved.toObject(),
+          blockchainHash: hashHex,
+        }),
+
+        // small delay
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ])
+        .then(async ([ipfsCid]) => {
+          // Store hash + CID on blockchain
+          const onChain = await storePredictionOnChain(
+            saved._id.toString(),
+            hashHex,
+            ipfsCid || "",
+            true,
+          );
+
+          // Update MongoDB
+          const updateFields = {
+            blockchainHash: hashHex,
+            blockchainConfirmed: true,
+            ...(ipfsCid && { ipfsCid,
+              ipfsStroedAt: new Date(),
+             }),
+            ...(onChain?.txHash && {
               blockchainTxHash: onChain.txHash,
-              blockchainHash: hashHex,
+            }),
+            ...(onChain?.blockNumber && {
               blockNumber: onChain.blockNumber,
-            }).catch(() => {});
+            }),
+          };
+
+          await Prediction.findByIdAndUpdate(saved._id, updateFields).catch(
+            () => {},
+          );
+
+          if (ipfsCid) {
+            console.log(
+              `IPFS+Blockchain stored: ${saved._id} — CID: ${ipfsCid}`,
+            );
           }
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error("Background blockchain/IPFS error:", err.message);
+        });
 
       blockchainData = { hash: hashHex, status: "pending" };
     } catch (err) {
       console.warn("Blockchain hash build failed (non-fatal):", err.message);
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
     return res.status(201).json({
       message: "Prediction complete",
@@ -165,8 +244,8 @@ export const predict = async (req, res) => {
     if (
       error.message.includes("fetch") ||
       error.message.includes("ECONNREFUSED") ||
-      error.message.includes("unavailable") || // ← catches Flask 503
-      error.message.includes("Flask error: 503") || // ← catches status code
+      error.message.includes("unavailable") ||
+      error.message.includes("Flask error: 503") ||
       error.message.includes("Flask error: 502")
     ) {
       return res.status(503).json({
@@ -183,7 +262,7 @@ export const predict = async (req, res) => {
 
 // --- GET /api/predictions/history ---------------------------------------------
 export const getPredictionHistory = async (req, res) => {
-  const userId = req.body.userId;
+  const userId = req.userId;
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -199,7 +278,7 @@ export const getPredictionHistory = async (req, res) => {
 
 // --- GET /api/predictions/remaining -------------------------------------------
 export const getPredictionsRemaining = async (req, res) => {
-  const userId = req.body.userId;
+  const userId = req.userId;
   try {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -233,7 +312,7 @@ export const getPredictionsRemaining = async (req, res) => {
 // --- POST /api/predictions/savePrediction (legacy) ----------------------------
 export const savePrediction = async (req, res) => {
   const { disease, userInputs, predictionResult, probability } = req.body;
-  const userId = req.body.userId;
+  const userId = req.userId;
 
   if (
     !disease ||
@@ -249,6 +328,7 @@ export const savePrediction = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const newPrediction = new Prediction({
+      userId,
       disease,
       userData: {
         name: user.name || "Unknown",
@@ -259,6 +339,7 @@ export const savePrediction = async (req, res) => {
       },
       predictionResult,
       probability,
+      consentGiven: user.dataConsent || false,
     });
 
     const saved = await newPrediction.save();
@@ -286,17 +367,13 @@ export const verifyPrediction = async (req, res) => {
         .json({ success: false, message: "Prediction not found" });
     }
 
-    // No blockchain data stored yet
-    if (!prediction.blockchainTxHash) {
+    if (!prediction.blockchainHash) {
       return res.json({ success: true, verified: false, status: "pending" });
     }
 
-    // ── Recompute hash from CURRENT data in MongoDB ───────────────────────────
-    // If someone tampered with the data, this hash will differ from what
-    // is stored on the Ethereum blockchain
     const recomputedHash = buildPredictionHash({
       predictionId: prediction._id.toString(),
-      userId: prediction.userData?.email || "",
+      userId: prediction.userId?.toString() || "",
       disease: prediction.disease,
       predictionResult: prediction.predictionResult,
       probability: prediction.probability,
@@ -304,7 +381,6 @@ export const verifyPrediction = async (req, res) => {
       createdAt: prediction.createdAt.toISOString(),
     });
 
-    // ── Compare recomputed hash against what's on Ethereum ───────────────────
     const { verifyPredictionOnChain, getPredictionFromChain } =
       await import("../services/blockchainService.js");
 
@@ -314,29 +390,35 @@ export const verifyPrediction = async (req, res) => {
     );
 
     if (!onChain.valid) {
-      // Hash mismatch — data was tampered
       return res.json({
         success: true,
         verified: false,
         tampered: true,
-        message:
-          "⚠️ Data mismatch — this prediction may have been tampered with",
+        message: "Data mismatch — this prediction may have been tampered with",
         storedHash: prediction.blockchainHash,
         recomputedHash,
       });
     }
 
-    // Hash matches — data is intact
     const chainData = await getPredictionFromChain(prediction._id.toString());
 
     return res.json({
       success: true,
       verified: true,
       timestamp: onChain.timestamp,
-      txHash: prediction.blockchainTxHash,
-      blockNumber: prediction.blockNumber,
+      txHash: prediction.blockchainTxHash || null,
+      blockNumber: prediction.blockNumber || null,
       storedBy: chainData?.storedBy || null,
-      etherscanUrl: `https://sepolia.etherscan.io/tx/${prediction.blockchainTxHash}`,
+      ipfsCid: chainData?.ipfsCid || prediction.ipfsCid || null,
+      ipfsUrl:
+        chainData?.ipfsCid || prediction.ipfsCid
+          ? `${process.env.PINATA_GATEWAY || "https://gateway.pinata.cloud"}/ipfs/${
+              chainData?.ipfsCid || prediction.ipfsCid
+            }`
+          : null,
+      etherscanUrl: prediction.blockchainTxHash
+        ? `https://sepolia.etherscan.io/tx/${prediction.blockchainTxHash}`
+        : `https://sepolia.etherscan.io/address/${process.env.CONTRACT_ADDRESS}`,
     });
   } catch (err) {
     console.error("Verify error:", err.message);

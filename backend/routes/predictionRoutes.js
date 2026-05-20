@@ -13,10 +13,18 @@ import {
 } from "../services/blockchainService.js";
 import Prediction from "../models/predictionModel.js";
 import mongoose from "mongoose";
-
+import rateLimit  from 'express-rate-limit'
 const predictionRouter = express.Router();
 
-predictionRouter.post("/predict", authUser, predict);
+const predictLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  message: {success: false, message: 'Too many predictions. please try again after a minute..'},
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+predictionRouter.post("/predict", authUser,predictLimiter, predict);
 predictionRouter.get("/history", authUser, getPredictionHistory);
 predictionRouter.get("/remaining", authUser, getPredictionsRemaining);
 predictionRouter.post("/savePrediction", authUser, savePrediction);
@@ -70,7 +78,7 @@ predictionRouter.get("/verify/:predictionId", authUser, async (req, res) => {
         verified: false,
         tampered: true,
         message:
-          "⚠️ Data mismatch — this prediction may have been tampered with",
+          " Data mismatch — this prediction may have been tampered with",
         storedHash: prediction.blockchainHash,
         recomputedHash,
       });

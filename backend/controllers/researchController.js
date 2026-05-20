@@ -1,40 +1,39 @@
 import crypto from "crypto";
 import Razorpay from "razorpay";
 import Prediction from "../models/predictionModel.js";
-import ResearchOrder from "../models/researchModel.js";
-import { cache, TTL } from "../services/cacheService.js"
+import { ResearchOrder, ResearchUser } from "../models/researchModel.js";
+import { cache, TTL } from "../services/cacheService.js";
 
 const razorpayInstance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// ── Pricing tiers ─────────────────────────────────────────────────────────────
-// Price per record in paise (₹)
+// Price per record
 const PRICE_PER_RECORD = {
-  100: 150, // ₹1.50 per record  → ₹150  for 100
-  500: 120, // ₹1.20 per record  → ₹600  for 500
-  1000: 90, // ₹0.90 per record  → ₹900  for 1000
-  5000: 60, // ₹0.60 per record  → ₹3000 for 5000
+  100: 150,
+  500: 120,
+  1000: 90,
+  5000: 60,
 };
 
 const calcAmount = (recordCount) => {
   const tiers = [5000, 1000, 500, 100];
   const tier = tiers.find((t) => recordCount >= t) || 100;
-  return recordCount * PRICE_PER_RECORD[tier]; // in paise
+  return recordCount * PRICE_PER_RECORD[tier];
 };
 
-// ── GET /api/research/stats ───────────────────────────────────────────────────
 // Public — shows dataset overview to attract researchers
 export const getDatasetStats = async (req, res) => {
   try {
-    // Try cache first
     const cached = await cache.get("research:stats");
     if (cached) {
       return res.json({ ...cached, fromCache: true });
     }
 
-    const totalConsented = await Prediction.countDocuments({ consentGiven: true });
+    const totalConsented = await Prediction.countDocuments({
+      consentGiven: true,
+    });
 
     const byDisease = await Prediction.aggregate([
       { $match: { consentGiven: true } },
@@ -59,22 +58,22 @@ export const getDatasetStats = async (req, res) => {
     const result = {
       success: true,
       stats: {
-        totalRecords:      totalConsented,
+        totalRecords: totalConsented,
         blockchainVerified,
-        byDisease:         Object.fromEntries(byDisease.map(d => [d._id, d.count])),
-        byRisk:            Object.fromEntries(byRisk.map(d => [d._id, d.count])),
-        byTier:            Object.fromEntries(byTier.map(d => [d._id, d.count])),
+        byDisease: Object.fromEntries(byDisease.map((d) => [d._id, d.count])),
+        byRisk: Object.fromEntries(byRisk.map((d) => [d._id, d.count])),
+        byTier: Object.fromEntries(byTier.map((d) => [d._id, d.count])),
         pricing: {
-          "100 records":  "₹150",
-          "500 records":  "₹600",
+          "100 records": "₹150",
+          "500 records": "₹600",
           "1000 records": "₹900",
           "5000 records": "₹3,000",
-          custom:         "Contact us",
+          custom: "Contact us",
         },
       },
     };
 
-    // Cache for 1 hour
+
     await cache.set("research:stats", result, TTL.RESEARCH_STATS);
     return res.json(result);
   } catch (err) {
@@ -82,8 +81,7 @@ export const getDatasetStats = async (req, res) => {
   }
 };
 
-// ── POST /api/research/preview ────────────────────────────────────────────────
-// Returns 5 sample anonymised records so researchers can see the format
+
 export const getDataPreview = async (req, res) => {
   try {
     const cached = await cache.get("research:preview");
@@ -91,16 +89,18 @@ export const getDataPreview = async (req, res) => {
 
     const samples = await Prediction.find({ consentGiven: true })
       .limit(5)
-      .select("-_id -userData.name -userData.email -userData.image -blockchainHash -blockchainTxHash");
+      .select(
+        "-_id -userData.name -userData.email -userData.image -blockchainHash -blockchainTxHash",
+      );
 
-    const anonymised = samples.map(p => ({
-      disease:          p.disease,
+    const anonymised = samples.map((p) => ({
+      disease: p.disease,
       predictionResult: p.predictionResult,
-      probability:      p.probability,
-      tier:             p.tier,
-      isBeta:           p.isBeta,
-      inputs:           p.userData?.inputs || {},
-      date:             p.createdAt,
+      probability: p.probability,
+      tier: p.tier,
+      isBeta: p.isBeta,
+      inputs: p.userData?.inputs || {},
+      date: p.createdAt,
     }));
 
     const result = { success: true, preview: anonymised };
@@ -111,7 +111,6 @@ export const getDataPreview = async (req, res) => {
   }
 };
 
-// ── POST /api/research/order ──────────────────────────────────────────────────
 // Create a research data purchase order
 export const createResearchOrder = async (req, res) => {
   try {
@@ -139,7 +138,6 @@ export const createResearchOrder = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
-    // Note: orders are accepted even if 0 consented records exist yet (data accumulates over time)
     const requested = recordCount;
     const amount = calcAmount(requested);
 
@@ -335,11 +333,19 @@ export const activateOrder = async (req, res) => {
   try {
     const { orderId } = req.body;
     const order = await ResearchOrder.findById(orderId);
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (!order)
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     const accessToken = crypto.randomUUID();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
-    await ResearchOrder.findByIdAndUpdate(orderId, { paid: true, accessToken, expiresAt, status: "active" });
+    await ResearchOrder.findByIdAndUpdate(orderId, {
+      paid: true,
+      accessToken,
+      expiresAt,
+      status: "active",
+    });
     return res.json({ success: true, accessToken, message: "Order activated" });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });

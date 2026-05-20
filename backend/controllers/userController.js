@@ -24,7 +24,12 @@ const registerUser = async (req, res) => {
     }
     const salt = await bycrypt.genSalt(10);
     const hashedPassword = await bycrypt.hash(password, salt);
-    const userData = { name, email, password: hashedPassword, dataConsent: dataConsent === true || dataConsent === "true" };
+    const userData = {
+      name,
+      email,
+      password: hashedPassword,
+      dataConsent: dataConsent === true || dataConsent === "true",
+    };
     const newUser = new userModel(userData);
     const user = await newUser.save();
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -33,7 +38,7 @@ const registerUser = async (req, res) => {
     const refreshToken = jwt.sign(
       { id: user._id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -44,7 +49,9 @@ const registerUser = async (req, res) => {
     res.json({ success: true, token });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "An internal error occurred" });
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -63,7 +70,7 @@ const loginUser = async (req, res) => {
       const refreshToken = jwt.sign(
         { id: user._id },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: "7d" }
+        { expiresIn: "7d" },
       );
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -77,13 +84,15 @@ const loginUser = async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "An internal error occurred" });
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
 const getProfile = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
     const userData = await userModel.findById(userId).select("-password");
     res.json({ success: true, userData });
   } catch (error) {
@@ -94,7 +103,8 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { userId, name, phone, address, dob, gender } = req.body;
+    const userId = req.userId;
+    const { name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
     if (!name || !phone || !dob || !gender) {
       return res.json({ success: false, message: "Data Missing" });
@@ -122,7 +132,8 @@ const updateProfile = async (req, res) => {
 
 const bookAppointment = async (req, res) => {
   try {
-    const { userId, docId, slotDate, slotTime } = req.body;
+    const userId = req.userId;
+    const { docId, slotDate, slotTime } = req.body;
     const docData = await doctorModel.findById(docId).select("-password");
     if (!docData.available) {
       return res.json({ success: false, message: "Doctor not Avialable" });
@@ -141,8 +152,14 @@ const bookAppointment = async (req, res) => {
     const userData = await userModel.findById(userId).select("-password");
     delete docData.slots_booked;
     const appointmentData = {
-      userId, docId, userData, docData,
-      amount: docData.fees, slotTime, slotDate, date: Date.now(),
+      userId,
+      docId,
+      userData,
+      docData,
+      amount: docData.fees,
+      slotTime,
+      slotDate,
+      date: Date.now(),
     };
     const newAppointment = new appointmentModel(appointmentData);
     await newAppointment.save();
@@ -156,7 +173,7 @@ const bookAppointment = async (req, res) => {
 
 const listAppointment = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = req.userId;
     const appointments = await appointmentModel.find({ userId });
     res.json({ success: true, appointments });
   } catch (error) {
@@ -167,30 +184,45 @@ const listAppointment = async (req, res) => {
 
 const cancelAppointment = async (req, res) => {
   try {
-    const { userId, appointmentId } = req.body;
+    const userId = req.userId;
+    const { appointmentId } = req.body;
     const appointmentData = await appointmentModel.findById(appointmentId);
     if (!appointmentData) {
-      return res.status(404).json({ success: false, message: "Appointment not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Appointment not found" });
     }
     if (appointmentData.cancelled) {
-      return res.status(400).json({ success: false, message: "Appointment already cancelled" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Appointment already cancelled" });
     }
     if (appointmentData.userId.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized Action" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Unauthorized Action" });
     }
-    await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true });
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      cancelled: true,
+    });
     const { docId, slotDate, slotTime } = appointmentData;
     const doctorData = await doctorModel.findById(docId);
     if (!doctorData) {
-      return res.status(404).json({ success: false, message: "Doctor not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Doctor not found" });
     }
     let slots_booked = doctorData.slots_booked;
-    slots_booked[slotDate] = slots_booked[slotDate].filter((e) => e !== slotTime);
+    slots_booked[slotDate] = slots_booked[slotDate].filter(
+      (e) => e !== slotTime,
+    );
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "An internal error occurred" });
+    res
+      .status(500)
+      .json({ success: false, message: "An internal error occurred" });
   }
 };
 
@@ -210,7 +242,10 @@ const paymentRazorpay = async (req, res) => {
     }
     const appointmentData = await appointmentModel.findById(appointmentId);
     if (!appointmentData || appointmentData.cancelled) {
-      return res.json({ success: false, message: "Appointment cancelled or not found" });
+      return res.json({
+        success: false,
+        message: "Appointment cancelled or not found",
+      });
     }
     if (appointmentData.payment === true) {
       return res.json({ success: false, message: "Appointment already paid" });
@@ -218,9 +253,13 @@ const paymentRazorpay = async (req, res) => {
     const amountPaise = Math.round(Number(appointmentData.amount) * 100);
     const currency = process.env.CURRENCY || "INR";
     const order = await razorpayInstance.orders.create({
-      amount: amountPaise, currency,
+      amount: amountPaise,
+      currency,
       receipt: appointmentId,
-      notes: { userId: userId.toString(), docId: appointmentData.docId.toString() },
+      notes: {
+        userId: userId.toString(),
+        docId: appointmentData.docId.toString(),
+      },
     });
     return res.json({ success: true, order });
   } catch (error) {
@@ -231,16 +270,23 @@ const paymentRazorpay = async (req, res) => {
 
 const verifyRazorpay = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.json({ success: false, message: "Missing payment verification data" });
+      return res.json({
+        success: false,
+        message: "Missing payment verification data",
+      });
     }
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
     if (expectedSignature !== razorpay_signature) {
-      return res.json({ success: false, message: "Signature verification failed" });
+      return res.json({
+        success: false,
+        message: "Signature verification failed",
+      });
     }
     const order = await razorpayInstance.orders.fetch(razorpay_order_id);
     const appointmentId = order?.receipt;
@@ -250,13 +296,19 @@ const verifyRazorpay = async (req, res) => {
     await appointmentModel.findByIdAndUpdate(appointmentId, {
       payment: true,
       paymentInfo: {
-        orderId: razorpay_order_id, paymentId: razorpay_payment_id,
-        signature: razorpay_signature, amount: order.amount,
-        currency: order.currency, status: "captured_or_authorized",
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        signature: razorpay_signature,
+        amount: order.amount,
+        currency: order.currency,
+        status: "captured_or_authorized",
         createdAt: new Date(),
       },
     });
-    return res.json({ success: true, message: "Payment verified successfully" });
+    return res.json({
+      success: true,
+      message: "Payment verified successfully",
+    });
   } catch (error) {
     console.error(error);
     return res.json({ success: false, message: error.message });
@@ -271,7 +323,9 @@ const razorpayWebhook = async (req, res) => {
     shasum.update(payload);
     const digest = shasum.digest("hex");
     if (digest !== req.headers["x-razorpay-signature"]) {
-      return res.status(400).json({ success: false, message: "Invalid webhook signature" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid webhook signature" });
     }
     const data = JSON.parse(payload);
     const event = data.event;
@@ -283,9 +337,13 @@ const razorpayWebhook = async (req, res) => {
         await appointmentModel.findByIdAndUpdate(appointmentId, {
           payment: true,
           paymentInfo: {
-            orderId: order_id, paymentId, amount: order.amount,
-            currency: order.currency, status: event,
-            via: "webhook", createdAt: new Date(),
+            orderId: order_id,
+            paymentId,
+            amount: order.amount,
+            currency: order.currency,
+            status: event,
+            via: "webhook",
+            createdAt: new Date(),
           },
         });
       }
@@ -300,7 +358,9 @@ const razorpayWebhook = async (req, res) => {
 const refreshAccessToken = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
-    return res.status(401).json({ success: false, message: "Session expired, please login again" });
+    return res
+      .status(401)
+      .json({ success: false, message: "Session expired, please login again" });
   }
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -309,7 +369,9 @@ const refreshAccessToken = async (req, res) => {
     });
     res.json({ success: true, token: newToken });
   } catch (error) {
-    res.status(401).json({ success: false, message: "Session expired, please login again" });
+    res
+      .status(401)
+      .json({ success: false, message: "Session expired, please login again" });
   }
 };
 
@@ -322,7 +384,9 @@ const createSubscriptionOrder = async (req, res) => {
     const user = await userModel.findById(userId);
 
     if (!user)
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
 
     const order = await razorpayInstance.orders.create({
       amount: 29900,
@@ -333,14 +397,14 @@ const createSubscriptionOrder = async (req, res) => {
 
     return res.json({ success: true, order });
   } catch (error) {
-
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 const verifySubscriptionPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
     const userId = req.userId || req.body.userId;
 
     const expectedSignature = crypto
@@ -349,7 +413,9 @@ const verifySubscriptionPayment = async (req, res) => {
       .digest("hex");
 
     if (expectedSignature !== razorpay_signature)
-      return res.status(400).json({ success: false, message: "Payment verification failed" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Payment verification failed" });
 
     const expiry = new Date();
     expiry.setDate(expiry.getDate() + 30);
@@ -361,23 +427,26 @@ const verifySubscriptionPayment = async (req, res) => {
       lastPredictionReset: new Date(),
     });
 
-    return res.json({ success: true, message: "Premium activated!", subscriptionExpiry: expiry });
+    return res.json({
+      success: true,
+      message: "Premium activated!",
+      subscriptionExpiry: expiry,
+    });
   } catch (error) {
-
     return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 export const updateConsent = async (req, res) => {
   try {
-    const { userId } = req.body  // from authUser middleware
-    const { dataConsent } = req.body
-    await userModel.findByIdAndUpdate(userId, { dataConsent })
-    res.json({ success: true, message: "Consent updated" })
+    const userId = req.userId; // from authUser middleware
+    const { dataConsent } = req.body;
+    await userModel.findByIdAndUpdate(userId, { dataConsent });
+    res.json({ success: true, message: "Consent updated" });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message });
   }
-}
+};
 
 export {
   registerUser,
